@@ -8,11 +8,19 @@ import {
     ListBoxItem,
     Popover,
     Select,
-    SelectValue,
     TextField,
     Input,
 } from "react-aria-components";
 import { useProxyChecker, type ProxyResult } from "./proxy-checker-context";
+
+function getFlagEmoji(countryCode: string): string {
+    if (!countryCode || countryCode.length !== 2) return "\u{1F30D}";
+    const codePoints = countryCode
+        .toUpperCase()
+        .split("")
+        .map((c) => 127397 + c.charCodeAt(0));
+    return String.fromCodePoint(...codePoints);
+}
 
 type ExportFilter = "all" | "working" | "dead";
 
@@ -145,9 +153,8 @@ export function ResultsTable() {
                         onSelectionChange={(k) => setExportFilter(k as ExportFilter)}
                     >
                         <Button
-                            id="export-csv-btn"
+                            id="export-filter-btn"
                             className="ra-btn"
-                            onPress={handleExport}
                             style={{
                                 display: "inline-flex",
                                 alignItems: "center",
@@ -162,10 +169,15 @@ export function ResultsTable() {
                                 cursor: "pointer",
                             }}
                         >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-                            </svg>
-                            Export
+                            {(() => {
+                                const opt = EXPORT_OPTIONS.find((o) => o.id === exportFilter);
+                                return (
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                        <span style={{ width: 5, height: 5, borderRadius: "50%", background: opt?.color || "var(--text-2)", display: "inline-block", flexShrink: 0 }} />
+                                        {opt?.label || "All results"}
+                                    </span>
+                                );
+                            })()}
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
                         </Button>
                         <Popover style={{ background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: 3, minWidth: "var(--trigger-width)", zIndex: 50, boxShadow: "0 8px 24px rgba(0,0,0,0.6)" }}>
@@ -194,6 +206,29 @@ export function ResultsTable() {
                             </ListBox>
                         </Popover>
                     </Select>
+                    <Button
+                        id="export-csv-btn"
+                        className="ra-btn"
+                        onPress={handleExport}
+                        style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            fontSize: 12,
+                            fontWeight: 500,
+                            padding: "5px 10px",
+                            borderRadius: "var(--radius)",
+                            background: "var(--bg-2)",
+                            border: "1px solid var(--border)",
+                            color: "var(--text-2)",
+                            cursor: "pointer",
+                        }}
+                    >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Export
+                    </Button>
                 </div>
             </div>
 
@@ -208,6 +243,7 @@ export function ResultsTable() {
                             <th style={th}>Auth</th>
                             <th style={th}>Status</th>
                             <th style={th}>Exit IP</th>
+                            <th style={th}>Country</th>
                             <th style={th}>Latency</th>
                             <th style={th}>Error</th>
                         </tr>
@@ -215,7 +251,7 @@ export function ResultsTable() {
                     <tbody>
                         {rows.length === 0 ? (
                             <tr>
-                                <td colSpan={8} style={{ padding: "32px 12px", textAlign: "center", color: "var(--text-3)", fontSize: 12 }}>
+                                <td colSpan={9} style={{ padding: "32px 12px", textAlign: "center", color: "var(--text-3)", fontSize: 12 }}>
                                     No results — paste proxies and run a check
                                 </td>
                             </tr>
@@ -233,6 +269,16 @@ export function ResultsTable() {
                                     <td style={td}>{r.user || <span style={{ color: "var(--text-3)" }}>—</span>}</td>
                                     <td style={td}><Status value={r.status} /></td>
                                     <td style={{ ...td, ...mono }}>{r.exitIp || <span style={{ color: "var(--text-3)" }}>—</span>}</td>
+                                    <td style={td}>
+                                        {r.country ? (
+                                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}>
+                                                <span style={{ fontSize: 14 }}>{getFlagEmoji(r.countryCode || "")}</span>
+                                                {r.country}
+                                            </span>
+                                        ) : (
+                                            <span style={{ color: "var(--text-3)" }}>—</span>
+                                        )}
+                                    </td>
                                     <td style={{ ...td, ...mono }}><Latency ms={r.responseTimeMs} /></td>
                                     <td style={{ ...td, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", color: r.error ? "var(--red)" : "var(--text-3)", fontSize: 11 }} title={r.error}>
                                         {r.error || "—"}
