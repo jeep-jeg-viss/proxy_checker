@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useRef, useCallback, useEffect, useMemo, type ReactNode } from "react";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 export interface ProxyResult {
@@ -50,6 +50,16 @@ export interface SessionDetail extends SessionSummary {
 export type ViewName = "overview" | "history" | "session-detail";
 type RunStatus = "idle" | "running" | "done";
 
+export type ValidationSeverity = "error" | "warning" | "tip";
+
+export interface ValidationIssue {
+    severity: ValidationSeverity;
+    message: string;
+}
+
+export type ValidationField = "proxyText" | "checkUrl" | "timeout" | "maxWorkers" | "fieldOrder" | "sessionName";
+export type ValidationState = Record<ValidationField, ValidationIssue[]>;
+
 interface ProxyCheckerState {
     // Proxy input
     proxyText: string;
@@ -64,6 +74,16 @@ interface ProxyCheckerState {
     setSessionName: (n: string) => void;
     sessionTags: string;
     setSessionTags: (t: string) => void;
+
+    // Validation
+    validation: ValidationState;
+    touched: Record<string, boolean>;
+    touch: (field: ValidationField) => void;
+    touchAll: () => void;
+    canRun: boolean;
+    errorCount: number;
+    warningCount: number;
+    tipCount: number;
 
     // Run
     status: RunStatus;
@@ -150,6 +170,157 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
     const updateConfig = useCallback((key: keyof Config, value: string) => {
         setConfig((prev) => ({ ...prev, [key]: value }));
     }, []);
+
+    // ── Validation ──────────────────────────────────────────────────────
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+    const touch = useCallback((field: ValidationField) => {
+        setTouched((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
+    }, []);
+
+    const touchAll = useCallback(() => {
+        setTouched({ proxyText: true, checkUrl: true, timeout: true, maxWorkers: true, fieldOrder: true, sessionName: true });
+    }, []);
+
+    const validation: ValidationState = useMemo(() => {
+        const v: ValidationState = { proxyText: [], checkUrl: [], timeout: [], maxWorkers: [], fieldOrder: [], sessionName: [] };
+
+        const IP_RE = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+        const HOSTNAME_RE = /^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/;
+
+        // ── Proxy text ────────────────────────────────────────────────
+        const trimmed = proxyText.trim();
+        if (!trimmed) {
+            v.proxyText.push({ severity: "error", message: "At least one proxy is required" });
+        } else {
+            const allLines = proxyText.split("\n");
+            const fieldOrder = config.fieldOrder.split(":");
+            const ipIdx = fieldOrder.indexOf("ip");
+            const portIdx = fieldOrder.indexOf("port");
+            const badLines: number[] = [];
+            const seen = new Map<string, number>();
+            const dupLines: number[] = [];
+            let validCount = 0;
+
+            allLines.forEach((raw, i) => {
+                const line = raw.trim();
+                if (!line || line.startsWith("#")) return;
+
+                const parts = line.split(config.delimiter);
+                const minParts = Math.max((ipIdx >= 0 ? ipIdx : 0), (portIdx >= 0 ? portIdx : 1)) + 1;
+
+                if (parts.length < minParts) {
+                    badLines.push(i + 1);
+                    return;
+                }
+
+                const ipVal = ipIdx >= 0 && ipIdx < parts.length ? parts[ipIdx].trim() : "";
+                const portVal = portIdx >= 0 && portIdx < parts.length ? parts[portIdx].trim() : "";
+                const portNum = parseInt(portVal, 10);
+
+                if ((!IP_RE.test(ipVal) && !HOSTNAME_RE.test(ipVal)) || !ipVal) {
+                    badLines.push(i + 1);
+                    return;
+                }
+                if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+                    badLines.push(i + 1);
+                    return;
+                }
+
+                validCount++;
+                const key = `${ipVal}:${portVal}`;
+                if (seen.has(key)) {
+                    dupLines.push(i + 1);
+                } else {
+                    seen.set(key, i + 1);
+                }
+            });
+
+            if (validCount === 0 && badLines.length > 0) {
+                v.proxyText.push({ severity: "error", message: "No valid proxy lines found — check your format" });
+            }
+
+            if (badLines.length > 0 && validCount > 0) {
+                if (badLines.length <= 5) {
+                    v.proxyText.push({ severity: "warning", message: `Invalid format on line${badLines.length > 1 ? "s" : ""} ${badLines.join(", ")}` });
+                } else {
+                    v.proxyText.push({ severity: "warning", message: `Invalid format on ${badLines.length} lines (${badLines.slice(0, 3).join(", ")}…)` });
+                }
+            }
+
+            if (dupLines.length > 0) {
+                v.proxyText.push({ severity: "warning", message: `${dupLines.length} duplicate IP${dupLines.length > 1 ? "s" : ""} found` });
+            }
+        }
+
+        // ── Check URL ─────────────────────────────────────────────────
+        const url = config.checkUrl.trim();
+        if (!url) {
+            v.checkUrl.push({ severity: "error", message: "A valid test URL is required" });
+        } else {
+            try {
+                const parsed = new URL(url);
+                if (!parsed.protocol.startsWith("http")) {
+                    v.checkUrl.push({ severity: "error", message: "A valid test URL is required (http:// or https://)" });
+                }
+            } catch {
+                v.checkUrl.push({ severity: "error", message: "A valid test URL is required" });
+            }
+        }
+
+        // ── Timeout ───────────────────────────────────────────────────
+        const timeout = parseInt(config.timeout, 10);
+        if (isNaN(timeout) || config.timeout.trim() === "") {
+            v.timeout.push({ severity: "error", message: "Timeout must be a number between 1 and 60" });
+        } else if (timeout < 1 || timeout > 60) {
+            v.timeout.push({ severity: "error", message: "Timeout must be a number between 1 and 60" });
+        }
+
+        // ── Max workers ───────────────────────────────────────────────
+        const workers = parseInt(config.maxWorkers, 10);
+        if (isNaN(workers) || config.maxWorkers.trim() === "") {
+            v.maxWorkers.push({ severity: "error", message: "Workers must be between 1 and 200" });
+        } else if (workers < 1 || workers > 200) {
+            v.maxWorkers.push({ severity: "error", message: "Workers must be between 1 and 200" });
+        } else {
+            // Count valid proxy lines for tip
+            const proxyLines = proxyText.trim().split("\n").filter((l) => l.trim() && !l.trim().startsWith("#")).length;
+            if (proxyLines > 0 && workers > proxyLines) {
+                v.maxWorkers.push({ severity: "warning", message: `More workers (${workers}) than proxies (${proxyLines}) — some will idle` });
+            }
+            if (workers > 50) {
+                v.maxWorkers.push({ severity: "tip", message: "Try reducing workers to ≤50 for better stability" });
+            }
+        }
+
+        // ── Field order / delimiter mismatch ──────────────────────────
+        if (trimmed) {
+            const sampleLines = proxyText.split("\n").filter((l) => l.trim() && !l.trim().startsWith("#")).slice(0, 10);
+            const fieldCount = config.fieldOrder.split(":").length;
+            const mismatchCount = sampleLines.filter((line) => {
+                const parts = line.trim().split(config.delimiter);
+                return parts.length < fieldCount;
+            }).length;
+            if (sampleLines.length > 0 && mismatchCount > sampleLines.length * 0.5) {
+                v.fieldOrder.push({ severity: "warning", message: `Delimiter mismatch: most lines don't match '${config.fieldOrder}' with delimiter '${config.delimiter}'` });
+            }
+        }
+
+        // ── Session name ──────────────────────────────────────────────
+        if (sessionName.length > 60) {
+            v.sessionName.push({ severity: "error", message: "Max 60 characters" });
+        }
+
+        return v;
+    }, [proxyText, config.checkUrl, config.timeout, config.maxWorkers, config.delimiter, config.fieldOrder, sessionName]);
+
+    // canRun = NO critical errors across all fields
+    const hasErrors = (field: ValidationField) => validation[field].some((i) => i.severity === "error");
+    const canRun = !Object.keys(validation).some((f) => hasErrors(f as ValidationField));
+
+    const errorCount = Object.values(validation).flat().filter((i) => i.severity === "error").length;
+    const warningCount = Object.values(validation).flat().filter((i) => i.severity === "warning").length;
+    const tipCount = Object.values(validation).flat().filter((i) => i.severity === "tip").length;
 
     const stopRun = useCallback(() => {
         abortRef.current?.abort();
@@ -377,6 +548,14 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
                 setSessionName,
                 sessionTags,
                 setSessionTags,
+                validation,
+                touched,
+                touch,
+                touchAll,
+                canRun,
+                errorCount,
+                warningCount,
+                tipCount,
                 status,
                 results,
                 stats,

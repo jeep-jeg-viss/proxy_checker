@@ -12,15 +12,17 @@ function formatTime(seconds: number): string {
 }
 
 export function RunControls() {
-    const { status, startRun, stopRun, progress, elapsedSeconds, proxyText } = useProxyChecker();
+    const { status, startRun, stopRun, progress, elapsedSeconds, canRun, errorCount, warningCount, tipCount, touchAll } = useProxyChecker();
     const isRunning = status === "running";
-    const hasProxies = proxyText.trim().length > 0;
     const progressPct = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
     const handlePress = () => {
         if (isRunning) {
             stopRun();
         } else {
+            // Touch all fields to reveal any hidden errors
+            touchAll();
+            if (!canRun) return;
             startRun();
         }
     };
@@ -41,7 +43,6 @@ export function RunControls() {
                     id="run-check-btn"
                     aria-label={isRunning ? "Stop" : "Run Check"}
                     onPress={handlePress}
-                    isDisabled={!isRunning && !hasProxies}
                     style={{
                         display: "inline-flex",
                         alignItems: "center",
@@ -50,12 +51,20 @@ export function RunControls() {
                         fontWeight: 500,
                         padding: "6px 14px",
                         borderRadius: "var(--radius)",
-                        background: isRunning ? "var(--red-muted)" : !hasProxies ? "var(--bg-3)" : "var(--accent)",
-                        color: isRunning ? "var(--red)" : !hasProxies ? "var(--text-3)" : "#fff",
+                        background: isRunning
+                            ? "var(--red-muted)"
+                            : !canRun
+                                ? "var(--bg-3)"
+                                : "var(--accent)",
+                        color: isRunning
+                            ? "var(--red)"
+                            : !canRun
+                                ? "var(--text-3)"
+                                : "#fff",
                         border: isRunning ? "1px solid rgba(217,83,79,0.25)" : "none",
-                        cursor: !isRunning && !hasProxies ? "not-allowed" : "pointer",
+                        cursor: "pointer",
                         transition: "all 80ms",
-                        opacity: !isRunning && !hasProxies ? 0.6 : 1,
+                        opacity: !isRunning && !canRun ? 0.7 : 1,
                     }}
                 >
                     {isRunning ? (
@@ -70,6 +79,66 @@ export function RunControls() {
                         </>
                     )}
                 </Button>
+
+                {/* Validation summary badges when not running */}
+                {!isRunning && (errorCount > 0 || warningCount > 0 || tipCount > 0) && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {errorCount > 0 && (
+                            <span style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                fontSize: 11,
+                                fontWeight: 500,
+                                color: "var(--red)",
+                                background: "var(--red-muted)",
+                                padding: "2px 8px",
+                                borderRadius: 10,
+                            }}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+                                </svg>
+                                {errorCount} {errorCount === 1 ? "error" : "errors"}
+                            </span>
+                        )}
+                        {warningCount > 0 && (
+                            <span style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                fontSize: 11,
+                                fontWeight: 500,
+                                color: "#e5a50a",
+                                background: "rgba(229,165,10,0.1)",
+                                padding: "2px 8px",
+                                borderRadius: 10,
+                            }}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
+                                {warningCount} {warningCount === 1 ? "warning" : "warnings"}
+                            </span>
+                        )}
+                        {tipCount > 0 && (
+                            <span style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                                fontSize: 11,
+                                fontWeight: 500,
+                                color: "var(--accent)",
+                                background: "var(--accent-muted)",
+                                padding: "2px 8px",
+                                borderRadius: 10,
+                            }}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+                                </svg>
+                                {tipCount} {tipCount === 1 ? "tip" : "tips"}
+                            </span>
+                        )}
+                    </div>
+                )}
 
                 {isRunning && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
