@@ -10,3 +10,6 @@ wheels/
 .venv
 output/
 input.txt
+
+frontend/.agent*/
+

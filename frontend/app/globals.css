@@ -1,0 +1,214 @@
+@import "tailwindcss";
+
+/* ── Linear Dark Theme ─────────────────────────────────────────────────── */
+:root {
+  --bg-0: #0a0a0b;
+  --bg-1: #101012;
+  --bg-2: #18181b;
+  --bg-3: #1f1f23;
+  --bg-hover: #1c1c20;
+  --bg-active: #232328;
+
+  --text-1: #e8e8ed;
+  --text-2: #7d7d85;
+  --text-3: #4e4e56;
+
+  --accent: #5e6ad2;
+  --accent-hover: #6e7bdf;
+  --accent-muted: rgba(94, 106, 210, 0.15);
+
+  --green: #4cb782;
+  --green-muted: rgba(76, 183, 130, 0.15);
+  --red: #d9534f;
+  --red-muted: rgba(217, 83, 79, 0.12);
+  --orange: #d9a641;
+  --orange-muted: rgba(217, 166, 65, 0.12);
+
+  --border: rgba(255, 255, 255, 0.055);
+  --border-hover: rgba(255, 255, 255, 0.09);
+
+  --radius: 5px;
+  --radius-lg: 8px;
+}
+
+@theme inline {
+  --color-background: var(--bg-0);
+  --color-foreground: var(--text-1);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg-0);
+  color: var(--text-1);
+  font-family: var(--font-sans), -apple-system, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-3);
+  border-radius: 3px;
+}
+
+::selection {
+  background: var(--accent-muted);
+}
+
+/* ── React Aria: Focus ──────────────────────────────────────────────────── */
+[data-focus-visible] {
+  outline: 1.5px solid var(--accent);
+  outline-offset: 1px;
+}
+
+[data-focused]:not([data-focus-visible]) {
+  outline: none;
+}
+
+/* ── React Aria: Inputs & TextAreas ────────────────────────────────────── */
+input[data-focused],
+textarea[data-focused] {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+input[data-hovered],
+textarea[data-hovered] {
+  border-color: var(--border-hover) !important;
+}
+
+/* ── React Aria: Buttons ───────────────────────────────────────────────── */
+button[data-hovered],
+[role="button"][data-hovered] {
+  filter: brightness(1.15);
+}
+
+button[data-pressed],
+[role="button"][data-pressed] {
+  filter: brightness(0.92);
+  transform: scale(0.98);
+}
+
+/* ── React Aria: ListBox Items ─────────────────────────────────────────── */
+[role="option"][data-hovered] {
+  background: var(--bg-hover) !important;
+  color: var(--text-1) !important;
+}
+
+[role="option"][data-selected] {
+  background: var(--accent-muted) !important;
+  color: var(--accent-hover) !important;
+}
+
+[role="option"][data-focused] {
+  background: var(--bg-hover) !important;
+}
+
+[role="option"][data-focus-visible] {
+  background: var(--bg-hover) !important;
+  outline: 1.5px solid var(--accent);
+  outline-offset: -1.5px;
+}
+
+/* ── React Aria: Select trigger ────────────────────────────────────────── */
+[data-pressed][aria-haspopup="listbox"] {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* ── React Aria: Popover ───────────────────────────────────────────────── */
+[data-entering] {
+  animation: popover-in 120ms ease-out;
+}
+
+[data-exiting] {
+  animation: popover-out 80ms ease-in;
+}
+
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes popover-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+}
+
+/* ── React Aria: FileTrigger button hover ──────────────────────────────── */
+.ra-btn[data-hovered] {
+  border-color: var(--border-hover) !important;
+  color: var(--text-1) !important;
+}
+
+.ra-btn[data-pressed] {
+  background: var(--bg-3) !important;
+}
+
+/* ── Sidebar nav (native buttons) ──────────────────────────────────────── */
+aside button:hover:not([style*="var(--bg-hover)"]) {
+  background: var(--bg-hover) !important;
+  color: var(--text-1) !important;
+}
+
+aside button:active {
+  background: var(--bg-active) !important;
+}
+
+/* ── Transitions for all interactive elements ──────────────────────────── */
+button,
+[role="button"],
+input,
+textarea,
+select {
+  transition: border-color 80ms, background 80ms, color 80ms, box-shadow 80ms, filter 80ms, transform 80ms;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes indeterminate {
+  0% {
+    left: -30%;
+  }
+
+  100% {
+    left: 100%;
+  }
+}
