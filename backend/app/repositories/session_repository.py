@@ -1,46 +1,81 @@
-import asyncio
+from datetime import datetime
 
+from sqlalchemy import desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..models.session import ProxySession
 from ..schemas.session import SessionRecord
 
 
 class SessionRepository:
-    """In-memory session storage with a DB-ready interface."""
-
-    def __init__(self) -> None:
-        self._sessions: dict[str, SessionRecord] = {}
-        self._lock = asyncio.Lock()
+    def __init__(self, db: AsyncSession) -> None:
+        self._db = db
 
     async def upsert(self, session: SessionRecord) -> None:
-        async with self._lock:
-            self._sessions[session.id] = session
+        existing = await self._db.get(ProxySession, session.id)
+        values = {
+            "name": session.name,
+            "tags": session.tags,
+            "created_at": self._parse_created_at(session.created_at),
+            "config": session.config.model_dump(),
+            "results": [result.model_dump() for result in session.results],
+            "stats": session.stats.model_dump(),
+        }
+
+        if existing is None:
+            db_obj = ProxySession(id=session.id, **values)
+            self._db.add(db_obj)
+        else:
+            for field_name, value in values.items():
+                setattr(existing, field_name, value)
+
+        await self._db.commit()
 
     async def list_summaries(self) -> list[dict]:
-        async with self._lock:
-            sessions = sorted(
-                self._sessions.values(),
-                key=lambda value: value.created_at,
-                reverse=True,
-            )
+        result = await self._db.execute(
+            select(ProxySession).order_by(desc(ProxySession.created_at))
+        )
+        sessions = result.scalars().all()
 
         return [
             {
                 "id": item.id,
                 "name": item.name,
-                "tags": item.tags,
-                "created_at": item.created_at,
-                "stats": item.stats.model_dump(),
+                "tags": item.tags or [],
+                "created_at": self._serialize_created_at(item.created_at),
+                "stats": item.stats or {},
             }
             for item in sessions
         ]
 
     async def get(self, session_id: str) -> dict | None:
-        async with self._lock:
-            session = self._sessions.get(session_id)
-        return session.model_dump() if session else None
+        session = await self._db.get(ProxySession, session_id)
+        if session is None:
+            return None
+
+        return {
+            "id": session.id,
+            "name": session.name,
+            "tags": session.tags or [],
+            "created_at": self._serialize_created_at(session.created_at),
+            "config": session.config or {},
+            "results": session.results or [],
+            "stats": session.stats or {},
+        }
 
     async def delete(self, session_id: str) -> bool:
-        async with self._lock:
-            if session_id not in self._sessions:
-                return False
-            del self._sessions[session_id]
-            return True
+        session = await self._db.get(ProxySession, session_id)
+        if session is None:
+            return False
+
+        await self._db.delete(session)
+        await self._db.commit()
+        return True
+
+    @staticmethod
+    def _parse_created_at(value: str) -> datetime:
+        return datetime.fromisoformat(value)
+
+    @staticmethod
+    def _serialize_created_at(value: datetime) -> str:
+        return value.isoformat()

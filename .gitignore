@@ -8,8 +8,11 @@ wheels/
 
 # Virtual environments
 .venv
+.uv-cache/
+backend/.uv-cache/
 output/
 input.txt
+.env
+backend/.env
 
 frontend/.agent*/
-

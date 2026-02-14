@@ -14,11 +14,9 @@ A toolkit for checking proxy servers and stress-testing HTTP endpoints, with a F
 ### 1. Install Dependencies
 
 ```bash
-# Root tools (proxy checker CLI + stress tester)
-uv sync
-
 # Backend
 cd backend
+Copy-Item .env.example .env
 uv sync
 cd ..
 
@@ -60,13 +58,13 @@ Navigate to [http://localhost:3000](http://localhost:3000) in your browser — y
 
 ---
 
-## Proxy Checker (`main.py`)
+## Proxy Checker (`backend/main.py`)
 
 Bulk-check a list of proxies for connectivity and anonymity. Each proxy is tested against a remote endpoint to verify it works and to discover the exit IP.
 
 ### Input Format
 
-Create an `input.txt` file with one proxy per line:
+Create a `backend/input.txt` file with one proxy per line:
 
 ```
 ip:port
@@ -75,7 +73,7 @@ ip:port:username:password
 
 ### Configuration
 
-Edit the constants at the top of `main.py`:
+Edit the constants at the top of `backend/main.py`:
 
 | Variable       | Default                    | Description                          |
 | -------------- | -------------------------- | ------------------------------------ |
@@ -91,22 +89,24 @@ Edit the constants at the top of `main.py`:
 ### Usage
 
 ```bash
+cd backend
 uv run main.py
 ```
 
-Results are saved to `output/proxy_results_<timestamp>.csv` with columns:
+Results are saved to `backend/output/proxy_results_<timestamp>.csv` with columns:
 
 `proxy_ip`, `proxy_port`, `user`, `status`, `exit_ip`, `response_time_ms`, `error`
 
 ---
 
-## HTTP Stress Tester (`stress_test.py`)
+## HTTP Stress Tester (`backend/stress_test.py`)
 
 Async HTTP stress tester powered by `aiohttp`. Hammers any URL with configurable concurrency, duration, or request count and reports detailed latency statistics.
 
 ### Usage
 
 ```bash
+cd backend
 uv run stress_test.py <url> [options]
 ```
 
@@ -126,6 +126,7 @@ uv run stress_test.py <url> [options]
 
 ```bash
 # Run for 10 seconds with 100 concurrent connections
+cd backend
 uv run stress_test.py https://httpbin.org/get -d 10 -c 100
 
 # Send exactly 500 requests with 50 concurrent connections

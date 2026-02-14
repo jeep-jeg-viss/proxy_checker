@@ -1,19 +1,22 @@
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..core.database import get_db
 from ..repositories.session_repository import SessionRepository
 from ..services.check_service import CheckService
 from ..services.geoip_service import GeoIPService
 
-_session_repository = SessionRepository()
 _geoip_service = GeoIPService()
-
-
-def get_session_repository() -> SessionRepository:
-    return _session_repository
 
 
 def get_geoip_service() -> GeoIPService:
     return _geoip_service
+
+
+def get_session_repository(
+    db: AsyncSession = Depends(get_db),
+) -> SessionRepository:
+    return SessionRepository(db=db)
 
 
 def get_check_service(

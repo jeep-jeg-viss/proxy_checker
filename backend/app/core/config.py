@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     app_version: str = "0.3.0"
     api_prefix: str = "/api"
     cors_allow_origins: list[str] = ["*"]
+    database_url: str
+    db_echo: bool = False
+    db_auto_create: bool = True
 
     model_config = SettingsConfigDict(
         env_file=".env",
