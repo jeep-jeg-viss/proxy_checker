@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import {
     Button,
     TextArea,
@@ -45,6 +46,8 @@ function IssueList({ issues }: { issues: ValidationIssue[] }) {
 
 export function ProxyInput() {
     const { proxyText, setProxyText, validation, touched, touch } = useProxyChecker();
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+    const [pasteHelp, setPasteHelp] = useState("");
     const lineCount = proxyText ? proxyText.split("\n").filter((l) => l.trim()).length : 0;
 
     const issues = touched.proxyText ? validation.proxyText : [];
@@ -66,6 +69,36 @@ export function ProxyInput() {
 
     const borderColor = hasError ? "var(--red)" : hasWarning ? "var(--orange)" : "var(--border)";
     const counterColor = hasError ? "var(--red)" : hasWarning ? "var(--orange)" : "var(--text-3)";
+    const normalizeClipboardText = (text: string) => text.replace(/\r\n?/g, "\n");
+
+    const handlePasteFromClipboard = async () => {
+        setPasteHelp("");
+        const clipboard = navigator.clipboard;
+
+        if (!clipboard?.readText) {
+            setPasteHelp("Clipboard read is unavailable here. Use Ctrl+V in the input box.");
+            textAreaRef.current?.focus();
+            return;
+        }
+
+        try {
+            const text = normalizeClipboardText(await clipboard.readText());
+            if (!text.trim()) {
+                setPasteHelp("Clipboard is empty.");
+                textAreaRef.current?.focus();
+                return;
+            }
+
+            setProxyText(text);
+            touch("proxyText");
+            textAreaRef.current?.focus();
+            const endPos = text.length;
+            textAreaRef.current?.setSelectionRange(endPos, endPos);
+        } catch {
+            setPasteHelp("Clipboard access blocked. Click input and press Ctrl+V.");
+            textAreaRef.current?.focus();
+        }
+    };
 
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -97,6 +130,7 @@ export function ProxyInput() {
             >
                 <Label className="sr-only">Proxy list</Label>
                 <TextArea
+                    ref={textAreaRef}
                     id="proxy-input-textarea"
                     placeholder={`ip:port\nip:port:user:pass`}
                     rows={9}
@@ -124,6 +158,31 @@ export function ProxyInput() {
 
             {/* Actions */}
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+                <Button
+                    id="paste-clipboard-btn"
+                    className="ra-btn"
+                    onPress={handlePasteFromClipboard}
+                    style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 5,
+                        fontSize: 12,
+                        fontWeight: 500,
+                        padding: "5px 10px",
+                        borderRadius: "var(--radius)",
+                        background: "var(--accent-muted)",
+                        border: "1px solid var(--accent)",
+                        color: "var(--accent)",
+                        cursor: "pointer",
+                        transition: "border-color 80ms, color 80ms, background 80ms",
+                    }}
+                >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Paste
+                </Button>
                 <FileTrigger acceptedFileTypes={[".txt", ".csv"]} onSelect={handleFileSelect}>
                     <Button
                         id="upload-file-btn"
@@ -171,6 +230,11 @@ export function ProxyInput() {
                     </Button>
                 )}
             </div>
+            {pasteHelp && (
+                <span style={{ marginTop: 4, fontSize: 11, color: "var(--text-3)" }}>
+                    {pasteHelp}
+                </span>
+            )}
         </div>
     );
 }

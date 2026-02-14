@@ -127,15 +127,15 @@ textarea[data-hovered] {
 /* ── Dark mode field contrast ───────────────────────────────────────────── */
 html.dark input,
 html.dark textarea {
-  background: #323b4c !important;
+  background: #171c25 !important;
   border-color: rgba(255, 255, 255, 0.34) !important;
-  box-shadow: inset 0 0 0 1px rgba(10, 14, 22, 0.42) !important;
+  box-shadow: inset 0 0 0 1px rgba(7, 10, 18, 0.5) !important;
 }
 
 html.dark [aria-haspopup="listbox"] {
-  background: #323b4c !important;
+  background: #171c25 !important;
   border-color: rgba(255, 255, 255, 0.34) !important;
-  box-shadow: inset 0 0 0 1px rgba(10, 14, 22, 0.42) !important;
+  box-shadow: inset 0 0 0 1px rgba(7, 10, 18, 0.5) !important;
 }
 
 /* ── React Aria: Buttons ───────────────────────────────────────────────── */

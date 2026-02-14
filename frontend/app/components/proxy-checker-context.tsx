@@ -197,6 +197,8 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
             const fieldOrder = config.fieldOrder.split(":");
             const ipIdx = fieldOrder.indexOf("ip");
             const portIdx = fieldOrder.indexOf("port");
+            const userIdx = fieldOrder.indexOf("user");
+            const passIdx = fieldOrder.indexOf("pass");
             const badLines: number[] = [];
             const seen = new Map<string, number>();
             const dupLines: number[] = [];
@@ -228,7 +230,15 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
                 }
 
                 validCount++;
-                const key = `${ipVal}:${portVal}`;
+                const userVal = userIdx >= 0 && userIdx < parts.length ? parts[userIdx].trim() : "";
+                const passVal = passIdx >= 0 && passIdx < parts.length ? parts[passIdx].trim() : "";
+                // Include auth fields in the dedupe key when present in the chosen format.
+                // This avoids treating ip:port:user:pass entries as duplicates by ip:port alone.
+                const keyParts = [`${ipVal}`.toLowerCase(), portVal];
+                if (userIdx >= 0 || passIdx >= 0) {
+                    keyParts.push(userVal, passVal);
+                }
+                const key = keyParts.join("|");
                 if (seen.has(key)) {
                     dupLines.push(i + 1);
                 } else {
@@ -249,7 +259,10 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
             }
 
             if (dupLines.length > 0) {
-                v.proxyText.push({ severity: "warning", message: `${dupLines.length} duplicate IP${dupLines.length > 1 ? "s" : ""} found` });
+                v.proxyText.push({
+                    severity: "warning",
+                    message: `${dupLines.length} duplicate prox${dupLines.length > 1 ? "ies" : "y"} found`,
+                });
             }
         }
 
