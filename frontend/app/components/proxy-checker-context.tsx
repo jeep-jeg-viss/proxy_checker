@@ -9,6 +9,7 @@ export interface ProxyResult {
     proxyIp: string;
     proxyPort: string;
     user: string;
+    password: string;
     status: "OK" | "FAIL";
     exitIp: string;
     responseTimeMs: number | null;
@@ -134,6 +135,7 @@ function mapResult(parsed: Record<string, unknown>): ProxyResult {
         proxyIp: parsed.proxy_ip as string,
         proxyPort: parsed.proxy_port as string,
         user: parsed.user as string,
+        password: (parsed.password as string) || (parsed.pass as string) || "",
         status: parsed.status as "OK" | "FAIL",
         exitIp: parsed.exit_ip as string,
         responseTimeMs: parsed.response_time_ms as number | null,

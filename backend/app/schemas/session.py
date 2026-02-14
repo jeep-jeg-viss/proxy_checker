@@ -16,6 +16,7 @@ class ProxyResult(BaseModel):
     proxy_ip: str
     proxy_port: str
     user: str
+    password: str = ""
     status: str
     exit_ip: str
     response_time_ms: int | None

@@ -41,6 +41,7 @@ def check_proxy_sync(
         "proxy_ip": proxy["ip"],
         "proxy_port": proxy["port"],
         "user": proxy.get("user", ""),
+        "password": proxy.get("pass", proxy.get("password", "")),
         "status": "FAIL",
         "exit_ip": "",
         "response_time_ms": None,

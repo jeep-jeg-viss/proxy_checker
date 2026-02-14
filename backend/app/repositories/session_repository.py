@@ -5,11 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.session import ProxySession
 from ..schemas.session import SessionRecord
+from ..services.password_crypto import PasswordCrypto
 
 
 class SessionRepository:
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(self, db: AsyncSession, password_crypto: PasswordCrypto) -> None:
         self._db = db
+        self._password_crypto = password_crypto
 
     async def upsert(self, session: SessionRecord) -> None:
         existing = await self._db.get(ProxySession, session.id)
@@ -19,7 +21,7 @@ class SessionRepository:
             "tags": session.tags,
             "created_at": self._parse_created_at(session.created_at),
             "config": session.config.model_dump(),
-            "results": [result.model_dump() for result in session.results],
+            "results": self._encrypt_results([result.model_dump() for result in session.results]),
             "stats": session.stats.model_dump(),
         }
 
@@ -68,7 +70,7 @@ class SessionRepository:
             "tags": session.tags or [],
             "created_at": self._serialize_created_at(session.created_at),
             "config": session.config or {},
-            "results": session.results or [],
+            "results": self._decrypt_results(session.results or []),
             "stats": session.stats or {},
         }
 
@@ -94,3 +96,25 @@ class SessionRepository:
     @staticmethod
     def _serialize_created_at(value: datetime) -> str:
         return value.isoformat()
+
+    def _encrypt_results(self, results: list[dict]) -> list[dict]:
+        encrypted_results: list[dict] = []
+        for result in results:
+            item = dict(result)
+            password = item.get("password")
+            if isinstance(password, str):
+                item["password"] = self._password_crypto.encrypt(password)
+            encrypted_results.append(item)
+        return encrypted_results
+
+    def _decrypt_results(self, results: list[dict]) -> list[dict]:
+        decrypted_results: list[dict] = []
+        for result in results:
+            item = dict(result)
+            if "password" not in item and isinstance(item.get("pass"), str):
+                item["password"] = item.get("pass", "")
+            password = item.get("password")
+            if isinstance(password, str):
+                item["password"] = self._password_crypto.decrypt(password)
+            decrypted_results.append(item)
+        return decrypted_results

@@ -58,7 +58,7 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
 }
 
 function downloadCSV(rows: ProxyResult[], filename: string) {
-    const headers = ["proxy_ip", "proxy_port", "user", "status", "exit_ip", "response_time_ms", "country", "city", "error"];
+    const headers = ["proxy_ip", "proxy_port", "user", "password", "status", "exit_ip", "response_time_ms", "country", "city", "error"];
     const csvRows = [
         headers.join(","),
         ...rows.map((r) =>
@@ -66,6 +66,7 @@ function downloadCSV(rows: ProxyResult[], filename: string) {
                 r.proxyIp,
                 r.proxyPort,
                 r.user,
+                r.password,
                 r.status,
                 r.exitIp,
                 r.responseTimeMs ?? "",
@@ -99,7 +100,7 @@ export function SessionDetailView() {
         if (filter) {
             const q = filter.toLowerCase();
             result = result.filter((r) =>
-                [r.proxyIp, r.proxyPort, r.user, r.status, r.exitIp, r.error, r.country || "", r.city || ""]
+                [r.proxyIp, r.proxyPort, r.user, r.password, r.status, r.exitIp, r.error, r.country || "", r.city || ""]
                     .join(" ")
                     .toLowerCase()
                     .includes(q)

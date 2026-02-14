@@ -10,9 +10,11 @@ from ..core.security import Auth0TokenVerifier
 from ..repositories.session_repository import SessionRepository
 from ..services.check_service import CheckService
 from ..services.geoip_service import GeoIPService
+from ..services.password_crypto import PasswordCrypto
 
 settings = get_settings()
 _geoip_service = GeoIPService()
+_password_crypto = PasswordCrypto(secret=settings.proxy_password_secret)
 _token_verifier = Auth0TokenVerifier(
     domain=settings.auth0_domain,
     audience=settings.auth0_audience,
@@ -29,7 +31,7 @@ def get_geoip_service() -> GeoIPService:
 def get_session_repository(
     db: AsyncSession = Depends(get_db),
 ) -> SessionRepository:
-    return SessionRepository(db=db)
+    return SessionRepository(db=db, password_crypto=_password_crypto)
 
 
 def get_check_service(

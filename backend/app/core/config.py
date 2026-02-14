@@ -11,10 +11,12 @@ class Settings(BaseSettings):
     database_url: str
     db_echo: bool = False
     db_auto_create: bool = True
+    db_statement_cache_size: int = 0
     auth0_domain: str
     auth0_audience: str
     auth0_issuer: str | None = None
     auth0_algorithms: list[str] = ["RS256"]
+    proxy_password_secret: str = "change-this-proxy-password-secret"
 
     model_config = SettingsConfigDict(
         env_file=".env",

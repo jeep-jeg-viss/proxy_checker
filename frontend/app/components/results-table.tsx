@@ -49,7 +49,7 @@ function Latency({ ms }: { ms: number | null }) {
 }
 
 function downloadCSV(rows: ProxyResult[], filename: string) {
-    const headers = ["proxy_ip", "proxy_port", "user", "status", "exit_ip", "response_time_ms", "error"];
+    const headers = ["proxy_ip", "proxy_port", "user", "password", "status", "exit_ip", "response_time_ms", "error"];
     const csvRows = [
         headers.join(","),
         ...rows.map((r) =>
@@ -57,6 +57,7 @@ function downloadCSV(rows: ProxyResult[], filename: string) {
                 r.proxyIp,
                 r.proxyPort,
                 r.user,
+                r.password,
                 r.status,
                 r.exitIp,
                 r.responseTimeMs ?? "",
@@ -83,7 +84,7 @@ export function ResultsTable() {
         if (filter) {
             const q = filter.toLowerCase();
             filtered = filtered.filter((r) =>
-                [r.proxyIp, r.proxyPort, r.user, r.status, r.exitIp, r.error].join(" ").toLowerCase().includes(q)
+                [r.proxyIp, r.proxyPort, r.user, r.password, r.status, r.exitIp, r.error].join(" ").toLowerCase().includes(q)
             );
         }
         return filtered;
