@@ -26,22 +26,28 @@
 
   --border: #e4e4e7;
   --border-hover: #d4d4d8;
+  --btn-surface: var(--bg-2);
+  --btn-surface-hover: var(--bg-hover);
+  --btn-surface-active: var(--bg-active);
+  --btn-border: var(--border);
+  --btn-border-hover: var(--border-hover);
+  --btn-text: var(--text-2);
 
   --radius: 5px;
   --radius-lg: 8px;
 }
 
 html.dark {
-  --bg-0: #1c212a;
-  --bg-1: #252b36;
-  --bg-2: #313949;
-  --bg-3: #3b4558;
-  --bg-hover: #455165;
-  --bg-active: #4e5b72;
+  --bg-0: #000;
+  --bg-1: #0a0a0a;
+  --bg-2: #111;
+  --bg-3: #1a1a1a;
+  --bg-hover: #202020;
+  --bg-active: #2a2a2a;
 
-  --text-1: #ffffff;
-  --text-2: #edf2fa;
-  --text-3: #cbd4e2;
+  --text-1: rgb(237, 237, 237);
+  --text-2: rgb(161, 161, 161);
+  --text-3: rgb(161, 161, 161);
 
   --accent: #5e6ad2;
   --accent-hover: #6e7bdf;
@@ -54,8 +60,14 @@ html.dark {
   --orange: #d9a641;
   --orange-muted: rgba(217, 166, 65, 0.12);
 
-  --border: rgba(255, 255, 255, 0.24);
-  --border-hover: rgba(255, 255, 255, 0.34);
+  --border: rgba(237, 237, 237, 0.18);
+  --border-hover: rgba(237, 237, 237, 0.3);
+  --btn-surface: #313949;
+  --btn-surface-hover: #455165;
+  --btn-surface-active: #4e5b72;
+  --btn-border: rgba(255, 255, 255, 0.34);
+  --btn-border-hover: rgba(255, 255, 255, 0.44);
+  --btn-text: #edf2fa;
 }
 
 @theme inline {
@@ -127,15 +139,22 @@ textarea[data-hovered] {
 /* ── Dark mode field contrast ───────────────────────────────────────────── */
 html.dark input,
 html.dark textarea {
-  background: #171c25 !important;
-  border-color: rgba(255, 255, 255, 0.34) !important;
-  box-shadow: inset 0 0 0 1px rgba(7, 10, 18, 0.5) !important;
+  background: var(--bg-1) !important;
+  color: var(--text-1) !important;
+  border-color: var(--border) !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45) !important;
 }
 
 html.dark [aria-haspopup="listbox"] {
-  background: #171c25 !important;
-  border-color: rgba(255, 255, 255, 0.34) !important;
-  box-shadow: inset 0 0 0 1px rgba(7, 10, 18, 0.5) !important;
+  background: var(--bg-1) !important;
+  color: var(--text-1) !important;
+  border-color: var(--border) !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: var(--text-3) !important;
 }
 
 /* ── React Aria: Buttons ───────────────────────────────────────────────── */
@@ -218,6 +237,21 @@ button[data-pressed],
 
 .ra-btn[data-pressed] {
   background: var(--bg-3) !important;
+}
+
+.logout-btn[data-hovered] {
+  background: rgba(220, 38, 38, 0.2) !important;
+  border-color: rgba(220, 38, 38, 0.5) !important;
+  color: var(--red) !important;
+  filter: none !important;
+}
+
+.logout-btn[data-pressed] {
+  background: rgba(220, 38, 38, 0.26) !important;
+  border-color: rgba(220, 38, 38, 0.6) !important;
+  color: var(--red) !important;
+  transform: scale(0.98);
+  filter: none !important;
 }
 
 /* ── Sidebar nav (native buttons) ──────────────────────────────────────── */

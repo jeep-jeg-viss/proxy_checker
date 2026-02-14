@@ -74,6 +74,8 @@ export function Header() {
                     {user?.email || user?.name || "Authenticated"}
                 </span>
                 <Button
+                    aria-label="Log out"
+                    className="ra-btn logout-btn"
                     onPress={() =>
                         logout({
                             logoutParams: {
@@ -85,16 +87,25 @@ export function Header() {
                         })
                     }
                     style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
                         fontSize: 12,
-                        color: "var(--text-2)",
-                        background: "none",
-                        border: "1px solid var(--border)",
-                        borderRadius: 8,
+                        fontWeight: 600,
+                        color: "var(--red)",
+                        background: "var(--red-muted)",
+                        border: "1px solid rgba(217,83,79,0.38)",
+                        borderRadius: 999,
                         cursor: "pointer",
-                        height: 28,
-                        padding: "0 10px",
+                        height: 30,
+                        padding: "0 12px",
                     }}
                 >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
                     Logout
                 </Button>
             </div>

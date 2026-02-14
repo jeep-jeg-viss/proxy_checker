@@ -65,12 +65,12 @@ export function RunControls() {
                         background: isRunning
                             ? "var(--red-muted)"
                             : isVisiblyBlocked
-                                ? "var(--bg-2)"
+                                ? "var(--btn-surface)"
                                 : "var(--accent)",
                         color: isRunning
                             ? "var(--red)"
                             : isVisiblyBlocked
-                                ? "var(--text-2)"
+                                ? "var(--btn-text)"
                                 : "#fff",
                         border: isRunning ? "1px solid rgba(217,83,79,0.25)" : "none",
                         cursor: "pointer",

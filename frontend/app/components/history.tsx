@@ -107,9 +107,9 @@ function SessionCard({ session, onOpen, onDelete }: {
                             fontWeight: 500,
                             padding: "5px 10px",
                             borderRadius: "var(--radius)",
-                            background: "var(--bg-2)",
-                            border: "1px solid var(--border)",
-                            color: "var(--text-2)",
+                            background: "var(--btn-surface)",
+                            border: "1px solid var(--btn-border)",
+                            color: "var(--btn-text)",
                             cursor: "pointer",
                         }}
                     >
@@ -239,9 +239,9 @@ export function History() {
                         fontWeight: 500,
                         padding: "5px 10px",
                         borderRadius: "var(--radius)",
-                        background: "var(--bg-2)",
-                        border: "1px solid var(--border)",
-                        color: "var(--text-2)",
+                        background: "var(--btn-surface)",
+                        border: "1px solid var(--btn-border)",
+                        color: "var(--btn-text)",
                         cursor: "pointer",
                     }}
                 >
