@@ -74,7 +74,7 @@ export function RunControls() {
                                 : "#fff",
                         border: isRunning ? "1px solid rgba(217,83,79,0.25)" : "none",
                         cursor: "pointer",
-                        transition: "all 80ms",
+                        transition: "background 60ms, color 60ms, opacity 60ms, border-color 60ms",
                         opacity: !isRunning && isVisiblyBlocked ? 0.7 : 1,
                     }}
                 >

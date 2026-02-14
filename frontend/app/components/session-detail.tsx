@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo, useCallback } from "react";
 import { Button, TextField, Label, Input } from "react-aria-components";
 import { useProxyChecker, type ProxyResult } from "./proxy-checker-context";
 
 function getFlagEmoji(countryCode: string): string {
-    if (!countryCode || countryCode.length !== 2) return "🌍";
+    if (!countryCode || countryCode.length !== 2) return "\u{1F30D}";
     const codePoints = countryCode
         .toUpperCase()
         .split("")
@@ -25,7 +25,7 @@ function formatDate(iso: string): string {
     });
 }
 
-function Status({ value }: { value: "OK" | "FAIL" }) {
+const Status = memo(function Status({ value }: { value: "OK" | "FAIL" }) {
     const ok = value === "OK";
     return (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: ok ? "var(--green)" : "var(--red)" }}>
@@ -33,17 +33,17 @@ function Status({ value }: { value: "OK" | "FAIL" }) {
             {ok ? "Alive" : "Failed"}
         </span>
     );
-}
+});
 
-function Latency({ ms }: { ms: number | null }) {
-    if (ms == null) return <span style={{ color: "var(--text-3)" }}>—</span>;
+const Latency = memo(function Latency({ ms }: { ms: number | null }) {
+    if (ms == null) return <span style={{ color: "var(--text-3)" }}>{"\u2014"}</span>;
     let c = "var(--green)";
     if (ms > 400) c = "var(--orange)";
     if (ms > 800) c = "var(--red)";
     return <span style={{ fontVariantNumeric: "tabular-nums", color: c }}>{ms}<span style={{ color: "var(--text-3)", marginLeft: 1 }}>ms</span></span>;
-}
+});
 
-function Stat({ label, value, color }: { label: string; value: string; color: string }) {
+const Stat = memo(function Stat({ label, value, color }: { label: string; value: string; color: string }) {
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "14px 0", flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -55,7 +55,7 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
             </span>
         </div>
     );
-}
+});
 
 function downloadCSV(rows: ProxyResult[], filename: string) {
     const headers = ["proxy_ip", "proxy_port", "user", "status", "exit_ip", "response_time_ms", "country", "city", "error"];
@@ -84,14 +84,79 @@ function downloadCSV(rows: ProxyResult[], filename: string) {
     URL.revokeObjectURL(url);
 }
 
+// Hoisted stable style objects
+const thStyle: React.CSSProperties = {
+    padding: "8px 12px",
+    fontSize: 11,
+    fontWeight: 500,
+    color: "var(--text-3)",
+    textAlign: "left",
+    whiteSpace: "nowrap",
+    borderBottom: "1px solid var(--border)",
+    position: "sticky",
+    top: 0,
+    background: "var(--bg-0)",
+};
+
+const tdStyle: React.CSSProperties = {
+    padding: "7px 12px",
+    fontSize: 12,
+    color: "var(--text-2)",
+    borderBottom: "1px solid var(--border)",
+    whiteSpace: "nowrap",
+};
+
+const monoStyle: React.CSSProperties = { fontFamily: "var(--font-mono), monospace" };
+
+const DetailRow = memo(function DetailRow({ r, index }: { r: ProxyResult; index: number }) {
+    const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLTableRowElement>) => {
+        e.currentTarget.style.background = "var(--bg-hover)";
+    }, []);
+    const handleMouseLeave = useCallback((e: React.MouseEvent<HTMLTableRowElement>) => {
+        e.currentTarget.style.background = "transparent";
+    }, []);
+
+    return (
+        <tr
+            style={{ transition: "background 60ms" }}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+            <td style={{ ...tdStyle, color: "var(--text-3)", fontSize: 11 }}>{index + 1}</td>
+            <td style={{ ...tdStyle, ...monoStyle, color: "var(--text-1)", fontWeight: 500 }}>{r.proxyIp}</td>
+            <td style={{ ...tdStyle, ...monoStyle }}>{r.proxyPort}</td>
+            <td style={tdStyle}>{r.user || <span style={{ color: "var(--text-3)" }}>{"\u2014"}</span>}</td>
+            <td style={tdStyle}><Status value={r.status} /></td>
+            <td style={{ ...tdStyle, ...monoStyle }}>{r.exitIp || <span style={{ color: "var(--text-3)" }}>{"\u2014"}</span>}</td>
+            <td style={tdStyle}>
+                {r.country ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}>
+                        <span style={{ fontSize: 14 }}>{getFlagEmoji(r.countryCode || "")}</span>
+                        {r.country}
+                        {r.city && <span style={{ color: "var(--text-3)", fontSize: 11 }}>{"\u00B7"} {r.city}</span>}
+                    </span>
+                ) : (
+                    <span style={{ color: "var(--text-3)" }}>{"\u2014"}</span>
+                )}
+            </td>
+            <td style={{ ...tdStyle, ...monoStyle }}><Latency ms={r.responseTimeMs} /></td>
+            <td style={{ ...tdStyle, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", color: r.error ? "var(--red)" : "var(--text-3)", fontSize: 11 }} title={r.error}>
+                {r.error || "\u2014"}
+            </td>
+        </tr>
+    );
+});
+
 export function SessionDetailView() {
     const { selectedSession, setCurrentView, deleteSession } = useProxyChecker();
     const [filter, setFilter] = useState("");
     const [countryFilter, setCountryFilter] = useState("");
 
     const s = selectedSession;
-    const countries = s?.stats.countries || {};
-    const countryList = Object.entries(countries).sort((a, b) => b[1] - a[1]);
+    const countryList = useMemo(() => {
+        const countries = s?.stats.countries || {};
+        return Object.entries(countries).sort((a, b) => b[1] - a[1]);
+    }, [s?.stats.countries]);
 
     const rows = useMemo(() => {
         if (!s) return [];
@@ -112,29 +177,6 @@ export function SessionDetailView() {
     }, [s, filter, countryFilter]);
 
     if (!s) return null;
-
-    const th: React.CSSProperties = {
-        padding: "8px 12px",
-        fontSize: 11,
-        fontWeight: 500,
-        color: "var(--text-3)",
-        textAlign: "left",
-        whiteSpace: "nowrap",
-        borderBottom: "1px solid var(--border)",
-        position: "sticky",
-        top: 0,
-        background: "var(--bg-0)",
-    };
-
-    const td: React.CSSProperties = {
-        padding: "7px 12px",
-        fontSize: 12,
-        color: "var(--text-2)",
-        borderBottom: "1px solid var(--border)",
-        whiteSpace: "nowrap",
-    };
-
-    const mono: React.CSSProperties = { fontFamily: "var(--font-mono), monospace" };
 
     return (
         <div style={{ maxWidth: 960, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -220,7 +262,7 @@ export function SessionDetailView() {
                 <Stat label="Total" value={String(s.stats.total)} color="var(--accent)" />
                 <Stat label="Alive" value={String(s.stats.alive)} color="var(--green)" />
                 <Stat label="Dead" value={String(s.stats.dead)} color="var(--red)" />
-                <Stat label="Avg latency" value={s.stats.avgLatency != null ? `${s.stats.avgLatency}ms` : "—"} color="var(--orange)" />
+                <Stat label="Avg latency" value={s.stats.avgLatency != null ? `${s.stats.avgLatency}ms` : "\u2014"} color="var(--orange)" />
             </div>
 
             {/* Countries */}
@@ -242,7 +284,7 @@ export function SessionDetailView() {
                                 background: !countryFilter ? "var(--accent-muted)" : "var(--bg-2)",
                                 color: !countryFilter ? "var(--accent)" : "var(--text-2)",
                                 cursor: "pointer",
-                                transition: "all 80ms",
+                                transition: "background 80ms, color 80ms, border-color 80ms",
                             }}
                         >
                             All
@@ -264,7 +306,7 @@ export function SessionDetailView() {
                                     background: countryFilter === name ? "var(--accent-muted)" : "var(--bg-2)",
                                     color: countryFilter === name ? "var(--accent)" : "var(--text-2)",
                                     cursor: "pointer",
-                                    transition: "all 80ms",
+                                    transition: "background 80ms, color 80ms, border-color 80ms",
                                     whiteSpace: "nowrap",
                                 }}
                             >
@@ -287,7 +329,7 @@ export function SessionDetailView() {
                         <Label className="sr-only">Filter</Label>
                         <Input
                             id="session-detail-search"
-                            placeholder="Filter…"
+                            placeholder="Filter\u2026"
                             style={{
                                 background: "var(--bg-2)",
                                 border: "1px solid var(--border)",
@@ -334,15 +376,15 @@ export function SessionDetailView() {
                 <table style={{ width: "100%", minWidth: 920, borderCollapse: "collapse" }}>
                     <thead>
                         <tr>
-                            <th style={th}>#</th>
-                            <th style={th}>Proxy</th>
-                            <th style={th}>Port</th>
-                            <th style={th}>Auth</th>
-                            <th style={th}>Status</th>
-                            <th style={th}>Exit IP</th>
-                            <th style={th}>Country</th>
-                            <th style={th}>Latency</th>
-                            <th style={th}>Error</th>
+                            <th style={thStyle}>#</th>
+                            <th style={thStyle}>Proxy</th>
+                            <th style={thStyle}>Port</th>
+                            <th style={thStyle}>Auth</th>
+                            <th style={thStyle}>Status</th>
+                            <th style={thStyle}>Exit IP</th>
+                            <th style={thStyle}>Country</th>
+                            <th style={thStyle}>Latency</th>
+                            <th style={thStyle}>Error</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -354,34 +396,7 @@ export function SessionDetailView() {
                             </tr>
                         ) : (
                             rows.map((r, i) => (
-                                <tr
-                                    key={r.id}
-                                    style={{ transition: "background 60ms" }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-                                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                                >
-                                    <td style={{ ...td, color: "var(--text-3)", fontSize: 11 }}>{i + 1}</td>
-                                    <td style={{ ...td, ...mono, color: "var(--text-1)", fontWeight: 500 }}>{r.proxyIp}</td>
-                                    <td style={{ ...td, ...mono }}>{r.proxyPort}</td>
-                                    <td style={td}>{r.user || <span style={{ color: "var(--text-3)" }}>—</span>}</td>
-                                    <td style={td}><Status value={r.status} /></td>
-                                    <td style={{ ...td, ...mono }}>{r.exitIp || <span style={{ color: "var(--text-3)" }}>—</span>}</td>
-                                    <td style={td}>
-                                        {r.country ? (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}>
-                                                <span style={{ fontSize: 14 }}>{getFlagEmoji(r.countryCode || "")}</span>
-                                                {r.country}
-                                                {r.city && <span style={{ color: "var(--text-3)", fontSize: 11 }}>· {r.city}</span>}
-                                            </span>
-                                        ) : (
-                                            <span style={{ color: "var(--text-3)" }}>—</span>
-                                        )}
-                                    </td>
-                                    <td style={{ ...td, ...mono }}><Latency ms={r.responseTimeMs} /></td>
-                                    <td style={{ ...td, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", color: r.error ? "var(--red)" : "var(--text-3)", fontSize: 11 }} title={r.error}>
-                                        {r.error || "—"}
-                                    </td>
-                                </tr>
+                                <DetailRow key={r.id} r={r} index={i} />
                             ))
                         )}
                     </tbody>

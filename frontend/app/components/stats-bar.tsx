@@ -1,8 +1,9 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { useProxyChecker } from "./proxy-checker-context";
 
-function Stat({ label, value, color }: { label: string; value: string; color: string }) {
+const Stat = memo(function Stat({ label, value, color }: { label: string; value: string; color: string }) {
     return (
         <div
             style={{
@@ -13,7 +14,6 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
                 flex: 1,
             }}
         >
-            {/* Label row with dot */}
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span
                     style={{
@@ -29,7 +29,6 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
                 </span>
             </div>
 
-            {/* Value */}
             <span
                 style={{
                     fontSize: 22,
@@ -44,24 +43,43 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
             </span>
         </div>
     );
-}
+});
 
 export function StatsBar() {
     const { stats, results, status } = useProxyChecker();
 
-    // During a run, compute live stats from accumulated results
     const isLive = status === "running";
-    const total = isLive ? results.length : stats.total;
-    const alive = isLive ? results.filter((r) => r.status === "OK").length : stats.alive;
-    const dead = isLive ? results.filter((r) => r.status === "FAIL").length : stats.dead;
 
-    let avgLatency: string;
-    if (isLive) {
-        const latencies = results.filter((r) => r.responseTimeMs != null).map((r) => r.responseTimeMs!);
-        avgLatency = latencies.length > 0 ? `${Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)}ms` : "—";
-    } else {
-        avgLatency = stats.avgLatency != null ? `${stats.avgLatency}ms` : "—";
-    }
+    // Memoize live stats to avoid recomputing on every render
+    const { total, alive, dead, avgLatency } = useMemo(() => {
+        if (!isLive) {
+            return {
+                total: stats.total,
+                alive: stats.alive,
+                dead: stats.dead,
+                avgLatency: stats.avgLatency != null ? `${stats.avgLatency}ms` : "\u2014",
+            };
+        }
+        let aliveCount = 0;
+        let deadCount = 0;
+        let latencySum = 0;
+        let latencyCount = 0;
+        for (let i = 0; i < results.length; i++) {
+            const r = results[i];
+            if (r.status === "OK") aliveCount++;
+            else deadCount++;
+            if (r.responseTimeMs != null) {
+                latencySum += r.responseTimeMs;
+                latencyCount++;
+            }
+        }
+        return {
+            total: results.length,
+            alive: aliveCount,
+            dead: deadCount,
+            avgLatency: latencyCount > 0 ? `${Math.round(latencySum / latencyCount)}ms` : "\u2014",
+        };
+    }, [isLive, results, stats]);
 
     return (
         <div
@@ -74,7 +92,7 @@ export function StatsBar() {
             <Stat label="Total" value={String(total)} color="var(--accent)" />
             <Stat label="Alive" value={String(alive)} color="var(--green)" />
             <Stat label="Dead" value={String(dead)} color="var(--red)" />
-            <Stat label="Avg latency" value={avgLatency} color="var(--orange)" />
+            <Stat label="Avg latency" value={String(avgLatency)} color="var(--orange)" />
         </div>
     );
 }

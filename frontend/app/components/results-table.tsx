@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo, useCallback } from "react";
 import {
     Button,
     Label,
@@ -30,7 +30,31 @@ const EXPORT_OPTIONS: { id: ExportFilter; label: string; color: string }[] = [
     { id: "all", label: "All results", color: "var(--text-2)" },
 ];
 
-function Status({ value }: { value: "OK" | "FAIL" }) {
+// Hoist stable style objects outside component to avoid recreating per render
+const thStyle: React.CSSProperties = {
+    padding: "8px 12px",
+    fontSize: 11,
+    fontWeight: 500,
+    color: "var(--text-3)",
+    textAlign: "left",
+    whiteSpace: "nowrap",
+    borderBottom: "1px solid var(--border)",
+    position: "sticky",
+    top: 0,
+    background: "var(--bg-0)",
+};
+
+const tdStyle: React.CSSProperties = {
+    padding: "7px 12px",
+    fontSize: 12,
+    color: "var(--text-2)",
+    borderBottom: "1px solid var(--border)",
+    whiteSpace: "nowrap",
+};
+
+const monoStyle: React.CSSProperties = { fontFamily: "var(--font-mono), monospace" };
+
+const Status = memo(function Status({ value }: { value: "OK" | "FAIL" }) {
     const ok = value === "OK";
     return (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: ok ? "var(--green)" : "var(--red)" }}>
@@ -38,15 +62,15 @@ function Status({ value }: { value: "OK" | "FAIL" }) {
             {ok ? "Alive" : "Failed"}
         </span>
     );
-}
+});
 
-function Latency({ ms }: { ms: number | null }) {
-    if (ms == null) return <span style={{ color: "var(--text-3)" }}>—</span>;
+const Latency = memo(function Latency({ ms }: { ms: number | null }) {
+    if (ms == null) return <span style={{ color: "var(--text-3)" }}>{"\u2014"}</span>;
     let c = "var(--green)";
     if (ms > 400) c = "var(--orange)";
     if (ms > 800) c = "var(--red)";
     return <span style={{ fontVariantNumeric: "tabular-nums", color: c }}>{ms}<span style={{ color: "var(--text-3)", marginLeft: 1 }}>ms</span></span>;
-}
+});
 
 function downloadCSV(rows: ProxyResult[], filename: string) {
     const headers = ["proxy_ip", "proxy_port", "user", "status", "exit_ip", "response_time_ms", "error"];
@@ -73,53 +97,66 @@ function downloadCSV(rows: ProxyResult[], filename: string) {
     URL.revokeObjectURL(url);
 }
 
+// Memoized table row to prevent re-renders when other rows change
+const ResultRow = memo(function ResultRow({ r, index }: { r: ProxyResult; index: number }) {
+    const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLTableRowElement>) => {
+        e.currentTarget.style.background = "var(--bg-hover)";
+    }, []);
+    const handleMouseLeave = useCallback((e: React.MouseEvent<HTMLTableRowElement>) => {
+        e.currentTarget.style.background = "transparent";
+    }, []);
+
+    return (
+        <tr
+            style={{ transition: "background 60ms" }}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+            <td style={{ ...tdStyle, color: "var(--text-3)", fontSize: 11 }}>{index + 1}</td>
+            <td style={{ ...tdStyle, ...monoStyle, color: "var(--text-1)", fontWeight: 500 }}>{r.proxyIp}</td>
+            <td style={{ ...tdStyle, ...monoStyle }}>{r.proxyPort}</td>
+            <td style={tdStyle}>{r.user || <span style={{ color: "var(--text-3)" }}>{"\u2014"}</span>}</td>
+            <td style={tdStyle}><Status value={r.status} /></td>
+            <td style={{ ...tdStyle, ...monoStyle }}>{r.exitIp || <span style={{ color: "var(--text-3)" }}>{"\u2014"}</span>}</td>
+            <td style={tdStyle}>
+                {r.country ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}>
+                        <span style={{ fontSize: 14 }}>{getFlagEmoji(r.countryCode || "")}</span>
+                        {r.country}
+                    </span>
+                ) : (
+                    <span style={{ color: "var(--text-3)" }}>{"\u2014"}</span>
+                )}
+            </td>
+            <td style={{ ...tdStyle, ...monoStyle }}><Latency ms={r.responseTimeMs} /></td>
+            <td style={{ ...tdStyle, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", color: r.error ? "var(--red)" : "var(--text-3)", fontSize: 11 }} title={r.error}>
+                {r.error || "\u2014"}
+            </td>
+        </tr>
+    );
+});
+
 export function ResultsTable() {
     const { results } = useProxyChecker();
     const [filter, setFilter] = useState("");
     const [exportFilter, setExportFilter] = useState<ExportFilter>("working");
 
     const rows = useMemo(() => {
-        let filtered = results;
-        if (filter) {
-            const q = filter.toLowerCase();
-            filtered = filtered.filter((r) =>
-                [r.proxyIp, r.proxyPort, r.user, r.status, r.exitIp, r.error].join(" ").toLowerCase().includes(q)
-            );
-        }
-        return filtered;
+        if (!filter) return results;
+        const q = filter.toLowerCase();
+        return results.filter((r) =>
+            [r.proxyIp, r.proxyPort, r.user, r.status, r.exitIp, r.error].join(" ").toLowerCase().includes(q)
+        );
     }, [results, filter]);
 
-    const handleExport = () => {
+    const handleExport = useCallback(() => {
         let exportRows = results;
         if (exportFilter === "working") exportRows = results.filter((r) => r.status === "OK");
         else if (exportFilter === "dead") exportRows = results.filter((r) => r.status === "FAIL");
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
         downloadCSV(exportRows, `proxy_results_${exportFilter}_${timestamp}.csv`);
-    };
-
-    const th: React.CSSProperties = {
-        padding: "8px 12px",
-        fontSize: 11,
-        fontWeight: 500,
-        color: "var(--text-3)",
-        textAlign: "left",
-        whiteSpace: "nowrap",
-        borderBottom: "1px solid var(--border)",
-        position: "sticky",
-        top: 0,
-        background: "var(--bg-0)",
-    };
-
-    const td: React.CSSProperties = {
-        padding: "7px 12px",
-        fontSize: 12,
-        color: "var(--text-2)",
-        borderBottom: "1px solid var(--border)",
-        whiteSpace: "nowrap",
-    };
-
-    const mono: React.CSSProperties = { fontFamily: "var(--font-mono), monospace" };
+    }, [results, exportFilter]);
 
     return (
         <div>
@@ -134,7 +171,7 @@ export function ResultsTable() {
                         <Label className="sr-only">Filter</Label>
                         <Input
                             id="results-search"
-                            placeholder="Filter…"
+                            placeholder="Filter\u2026"
                             style={{
                                 background: "var(--bg-2)",
                                 border: "1px solid var(--border)",
@@ -237,53 +274,27 @@ export function ResultsTable() {
                 <table style={{ width: "100%", minWidth: 920, borderCollapse: "collapse" }}>
                     <thead>
                         <tr>
-                            <th style={th}>#</th>
-                            <th style={th}>Proxy</th>
-                            <th style={th}>Port</th>
-                            <th style={th}>Auth</th>
-                            <th style={th}>Status</th>
-                            <th style={th}>Exit IP</th>
-                            <th style={th}>Country</th>
-                            <th style={th}>Latency</th>
-                            <th style={th}>Error</th>
+                            <th style={thStyle}>#</th>
+                            <th style={thStyle}>Proxy</th>
+                            <th style={thStyle}>Port</th>
+                            <th style={thStyle}>Auth</th>
+                            <th style={thStyle}>Status</th>
+                            <th style={thStyle}>Exit IP</th>
+                            <th style={thStyle}>Country</th>
+                            <th style={thStyle}>Latency</th>
+                            <th style={thStyle}>Error</th>
                         </tr>
                     </thead>
                     <tbody>
                         {rows.length === 0 ? (
                             <tr>
                                 <td colSpan={9} style={{ padding: "32px 12px", textAlign: "center", color: "var(--text-3)", fontSize: 12 }}>
-                                    No results — paste proxies and run a check
+                                    No results {"\u2014"} paste proxies and run a check
                                 </td>
                             </tr>
                         ) : (
                             rows.map((r, i) => (
-                                <tr
-                                    key={r.id}
-                                    style={{ transition: "background 60ms" }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
-                                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                                >
-                                    <td style={{ ...td, color: "var(--text-3)", fontSize: 11 }}>{i + 1}</td>
-                                    <td style={{ ...td, ...mono, color: "var(--text-1)", fontWeight: 500 }}>{r.proxyIp}</td>
-                                    <td style={{ ...td, ...mono }}>{r.proxyPort}</td>
-                                    <td style={td}>{r.user || <span style={{ color: "var(--text-3)" }}>—</span>}</td>
-                                    <td style={td}><Status value={r.status} /></td>
-                                    <td style={{ ...td, ...mono }}>{r.exitIp || <span style={{ color: "var(--text-3)" }}>—</span>}</td>
-                                    <td style={td}>
-                                        {r.country ? (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}>
-                                                <span style={{ fontSize: 14 }}>{getFlagEmoji(r.countryCode || "")}</span>
-                                                {r.country}
-                                            </span>
-                                        ) : (
-                                            <span style={{ color: "var(--text-3)" }}>—</span>
-                                        )}
-                                    </td>
-                                    <td style={{ ...td, ...mono }}><Latency ms={r.responseTimeMs} /></td>
-                                    <td style={{ ...td, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", color: r.error ? "var(--red)" : "var(--text-3)", fontSize: 11 }} title={r.error}>
-                                        {r.error || "—"}
-                                    </td>
-                                </tr>
+                                <ResultRow key={r.id} r={r} index={i} />
                             ))
                         )}
                     </tbody>

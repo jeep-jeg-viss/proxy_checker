@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useRef, useCallback, useEffect, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useState, useRef, useCallback, useEffect, useMemo, useTransition, type ReactNode } from "react";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 export interface ProxyResult {
@@ -117,6 +117,10 @@ const DEFAULT_CONFIG: Config = {
 
 const DEFAULT_STATS: Stats = { total: 0, alive: 0, dead: 0, avgLatency: null };
 
+// Pre-compile validation regexes outside render cycle
+const IP_RE = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+const HOSTNAME_RE = /^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/;
+
 // ── Context ─────────────────────────────────────────────────────────────────
 const Ctx = createContext<ProxyCheckerState | null>(null);
 
@@ -167,6 +171,35 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
     const abortRef = useRef<AbortController | null>(null);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+    // ── SSE result batching ─────────────────────────────────────────────
+    // Accumulate results between frames and flush once per rAF to avoid
+    // per-event re-renders during high-throughput streaming.
+    const resultBatchRef = useRef<ProxyResult[]>([]);
+    const batchRafRef = useRef<number | null>(null);
+    const latestProgressRef = useRef<{ completed: number; total: number } | null>(null);
+
+    const [, startTransition] = useTransition();
+
+    const flushResultBatch = useCallback(() => {
+        batchRafRef.current = null;
+        const batch = resultBatchRef.current;
+        const prog = latestProgressRef.current;
+        if (batch.length > 0) {
+            const toAdd = batch.slice();
+            resultBatchRef.current = [];
+            setResults((prev) => {
+                const next = new Array(prev.length + toAdd.length);
+                for (let i = 0; i < prev.length; i++) next[i] = prev[i];
+                for (let i = 0; i < toAdd.length; i++) next[prev.length + i] = toAdd[i];
+                return next;
+            });
+        }
+        if (prog) {
+            latestProgressRef.current = null;
+            setProgress(prog);
+        }
+    }, []);
+
     const updateConfig = useCallback((key: keyof Config, value: string) => {
         setConfig((prev) => ({ ...prev, [key]: value }));
     }, []);
@@ -182,18 +215,31 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
         setTouched({ proxyText: true, checkUrl: true, timeout: true, maxWorkers: true, fieldOrder: true, sessionName: true });
     }, []);
 
+    // Debounced proxy text — avoids re-running expensive validation on every keystroke
+    const [debouncedProxyText, setDebouncedProxyText] = useState(proxyText);
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = setTimeout(() => {
+            startTransition(() => {
+                setDebouncedProxyText(proxyText);
+            });
+        }, 150);
+        return () => {
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        };
+    }, [proxyText, startTransition]);
+
     const validation: ValidationState = useMemo(() => {
         const v: ValidationState = { proxyText: [], checkUrl: [], timeout: [], maxWorkers: [], fieldOrder: [], sessionName: [] };
 
-        const IP_RE = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-        const HOSTNAME_RE = /^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/;
-
         // ── Proxy text ────────────────────────────────────────────────
-        const trimmed = proxyText.trim();
+        const trimmed = debouncedProxyText.trim();
         if (!trimmed) {
             v.proxyText.push({ severity: "error", message: "At least one proxy is required" });
         } else {
-            const allLines = proxyText.split("\n");
+            const allLines = debouncedProxyText.split("\n");
             const fieldOrder = config.fieldOrder.split(":");
             const ipIdx = fieldOrder.indexOf("ip");
             const portIdx = fieldOrder.indexOf("port");
@@ -232,8 +278,6 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
                 validCount++;
                 const userVal = userIdx >= 0 && userIdx < parts.length ? parts[userIdx].trim() : "";
                 const passVal = passIdx >= 0 && passIdx < parts.length ? parts[passIdx].trim() : "";
-                // Include auth fields in the dedupe key when present in the chosen format.
-                // This avoids treating ip:port:user:pass entries as duplicates by ip:port alone.
                 const keyParts = [`${ipVal}`.toLowerCase(), portVal];
                 if (userIdx >= 0 || passIdx >= 0) {
                     keyParts.push(userVal, passVal);
@@ -296,19 +340,18 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
         } else if (workers < 1 || workers > 200) {
             v.maxWorkers.push({ severity: "error", message: "Workers must be between 1 and 200" });
         } else {
-            // Count valid proxy lines for tip
-            const proxyLines = proxyText.trim().split("\n").filter((l) => l.trim() && !l.trim().startsWith("#")).length;
+            const proxyLines = debouncedProxyText.trim().split("\n").filter((l) => l.trim() && !l.trim().startsWith("#")).length;
             if (proxyLines > 0 && workers > proxyLines) {
                 v.maxWorkers.push({ severity: "warning", message: `More workers (${workers}) than proxies (${proxyLines}) — some will idle` });
             }
             if (workers > 50) {
-                v.maxWorkers.push({ severity: "tip", message: "Try reducing workers to ≤50 for better stability" });
+                v.maxWorkers.push({ severity: "tip", message: "Try reducing workers to \u226450 for better stability" });
             }
         }
 
         // ── Field order / delimiter mismatch ──────────────────────────
         if (trimmed) {
-            const sampleLines = proxyText.split("\n").filter((l) => l.trim() && !l.trim().startsWith("#")).slice(0, 10);
+            const sampleLines = debouncedProxyText.split("\n").filter((l) => l.trim() && !l.trim().startsWith("#")).slice(0, 10);
             const fieldCount = config.fieldOrder.split(":").length;
             const mismatchCount = sampleLines.filter((line) => {
                 const parts = line.trim().split(config.delimiter);
@@ -325,15 +368,18 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
         }
 
         return v;
-    }, [proxyText, config.checkUrl, config.timeout, config.maxWorkers, config.delimiter, config.fieldOrder, sessionName]);
+    }, [debouncedProxyText, config.checkUrl, config.timeout, config.maxWorkers, config.delimiter, config.fieldOrder, sessionName]);
 
-    // canRun = NO critical errors across all fields
-    const hasErrors = (field: ValidationField) => validation[field].some((i) => i.severity === "error");
-    const canRun = !Object.keys(validation).some((f) => hasErrors(f as ValidationField));
+    // Memoize derived validation counts
+    const canRun = useMemo(() => {
+        return !Object.keys(validation).some((f) =>
+            validation[f as ValidationField].some((i) => i.severity === "error")
+        );
+    }, [validation]);
 
-    const errorCount = Object.values(validation).flat().filter((i) => i.severity === "error").length;
-    const warningCount = Object.values(validation).flat().filter((i) => i.severity === "warning").length;
-    const tipCount = Object.values(validation).flat().filter((i) => i.severity === "tip").length;
+    const errorCount = useMemo(() => Object.values(validation).flat().filter((i) => i.severity === "error").length, [validation]);
+    const warningCount = useMemo(() => Object.values(validation).flat().filter((i) => i.severity === "warning").length, [validation]);
+    const tipCount = useMemo(() => Object.values(validation).flat().filter((i) => i.severity === "tip").length, [validation]);
 
     const stopRun = useCallback(() => {
         abortRef.current?.abort();
@@ -342,8 +388,13 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
             clearInterval(timerRef.current);
             timerRef.current = null;
         }
+        // Flush any pending batched results before marking done
+        if (batchRafRef.current) {
+            cancelAnimationFrame(batchRafRef.current);
+        }
+        flushResultBatch();
         setStatus("done");
-    }, []);
+    }, [flushResultBatch]);
 
     // ── Fetch sessions list ─────────────────────────────────────────────
     const fetchSessions = useCallback(async () => {
@@ -423,6 +474,8 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
         setProgress({ completed: 0, total: 0 });
         setElapsedSeconds(0);
         setStatus("running");
+        resultBatchRef.current = [];
+        latestProgressRef.current = null;
 
         const startTime = Date.now();
         timerRef.current = setInterval(() => {
@@ -491,16 +544,18 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
                     if (eventType === "start") {
                         setProgress({ completed: 0, total: parsed.total });
                     } else if (eventType === "result") {
-                        const result = mapResult(parsed);
-                        setResults((prev) => [...prev, result]);
+                        // Batch results and flush once per animation frame
+                        resultBatchRef.current.push(mapResult(parsed));
                         if (parsed._progress) {
-                            setProgress({
+                            latestProgressRef.current = {
                                 completed: parsed._progress.completed,
                                 total: parsed._progress.total,
-                            });
+                            };
+                        }
+                        if (!batchRafRef.current) {
+                            batchRafRef.current = requestAnimationFrame(flushResultBatch);
                         }
                     } else if (eventType === "geo") {
-                        // Update results with country info
                         const geoMap = parsed as Record<string, { country: string; countryCode: string; city: string }>;
                         setResults((prev) =>
                             prev.map((r) => {
@@ -524,7 +579,6 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
                             avgLatency: parsed.avg_latency,
                             countries: parsed.countries,
                         });
-                        // Refresh sessions list since a new one was just created
                         fetchSessions();
                     }
                 }
@@ -540,51 +594,70 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
                 clearInterval(timerRef.current);
                 timerRef.current = null;
             }
+            // Flush remaining batched results
+            if (batchRafRef.current) {
+                cancelAnimationFrame(batchRafRef.current);
+                batchRafRef.current = null;
+            }
+            flushResultBatch();
             abortRef.current = null;
             setStatus((s) => (s === "running" ? "done" : s));
         }
-    }, [proxyText, config, sessionName, sessionTags, fetchSessions]);
+    }, [proxyText, config, sessionName, sessionTags, fetchSessions, flushResultBatch]);
 
     // Fetch sessions on mount
     useEffect(() => {
         fetchSessions();
     }, [fetchSessions]);
 
+    // Cleanup rAF on unmount
+    useEffect(() => {
+        return () => {
+            if (batchRafRef.current) cancelAnimationFrame(batchRafRef.current);
+        };
+    }, []);
+
+    // Memoize context value to avoid re-creating the object every render
+    const contextValue = useMemo<ProxyCheckerState>(() => ({
+        proxyText,
+        setProxyText,
+        config,
+        updateConfig,
+        sessionName,
+        setSessionName,
+        sessionTags,
+        setSessionTags,
+        validation,
+        touched,
+        touch,
+        touchAll,
+        canRun,
+        errorCount,
+        warningCount,
+        tipCount,
+        status,
+        results,
+        stats,
+        progress,
+        elapsedSeconds,
+        startRun,
+        stopRun,
+        currentView,
+        setCurrentView,
+        sessions,
+        fetchSessions,
+        selectedSession,
+        loadSession,
+        deleteSession,
+    }), [
+        proxyText, config, updateConfig, sessionName, sessionTags, validation, touched,
+        touch, touchAll, canRun, errorCount, warningCount, tipCount,
+        status, results, stats, progress, elapsedSeconds, startRun, stopRun,
+        currentView, sessions, fetchSessions, selectedSession, loadSession, deleteSession,
+    ]);
+
     return (
-        <Ctx.Provider
-            value={{
-                proxyText,
-                setProxyText,
-                config,
-                updateConfig,
-                sessionName,
-                setSessionName,
-                sessionTags,
-                setSessionTags,
-                validation,
-                touched,
-                touch,
-                touchAll,
-                canRun,
-                errorCount,
-                warningCount,
-                tipCount,
-                status,
-                results,
-                stats,
-                progress,
-                elapsedSeconds,
-                startRun,
-                stopRun,
-                currentView,
-                setCurrentView,
-                sessions,
-                fetchSessions,
-                selectedSession,
-                loadSession,
-                deleteSession,
-            }}
-        >
+        <Ctx.Provider value={contextValue}>
             {children}
         </Ctx.Provider>
     );
