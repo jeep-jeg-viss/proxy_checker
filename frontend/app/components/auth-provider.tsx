@@ -57,8 +57,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       authorizationParams={{
         redirect_uri:
           typeof window !== "undefined"
-            ? window.location.origin
-            : "http://localhost:3000",
+            ? `${window.location.origin}/dashboard`
+            : "http://localhost:3000/dashboard",
         audience,
         scope,
       }}

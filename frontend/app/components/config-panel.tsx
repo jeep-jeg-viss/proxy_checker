@@ -36,7 +36,7 @@ const FIELD_ORDERS = [
 const lbl: React.CSSProperties = {
     display: "block",
     fontSize: 12,
-    fontWeight: 400,
+    fontWeight: 550,
     color: "var(--text-2)",
     marginBottom: 4,
 };

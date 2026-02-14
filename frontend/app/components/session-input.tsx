@@ -8,7 +8,7 @@ import { UiIcon } from "./ui-icon";
 const lbl: React.CSSProperties = {
     display: "block",
     fontSize: 12,
-    fontWeight: 400,
+    fontWeight: 550,
     color: "var(--text-2)",
     marginBottom: 4,
 };
@@ -51,7 +51,7 @@ export function SessionInput() {
                 >
                     <Label style={lbl}>
                         Session name
-                        <span style={{ color: "var(--text-3)", fontWeight: 300, marginLeft: 4 }}>(optional)</span>
+                        <span style={{ color: "var(--text-3)", fontWeight: 400, marginLeft: 4 }}>(optional)</span>
                     </Label>
                     <Input
                         id="session-name-input"
@@ -85,7 +85,7 @@ export function SessionInput() {
             </div>
 
             <TextField aria-label="Tags" value={sessionTags} onChange={setSessionTags}>
-                <Label style={lbl}>Tags <span style={{ color: "var(--text-3)", fontWeight: 300 }}>(comma-separated)</span></Label>
+                <Label style={lbl}>Tags <span style={{ color: "var(--text-3)", fontWeight: 400 }}>(comma-separated)</span></Label>
                 <Input
                     id="session-tags-input"
                     placeholder="e.g. production, us-east, residential"

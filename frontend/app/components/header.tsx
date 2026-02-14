@@ -72,7 +72,7 @@ export function Header() {
                 )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 12, color: "var(--text-2)" }}>
+                <span style={{ fontSize: 12, color: "var(--text-1)", fontWeight: 500 }}>
                     {user?.email || user?.name || "Authenticated"}
                 </span>
                 <Button

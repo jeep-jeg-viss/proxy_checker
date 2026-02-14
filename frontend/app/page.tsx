@@ -1,157 +1,181 @@
-"use client";
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  Gauge,
+  Globe2,
+  Layers3,
+  ShieldCheck,
+  Timer,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
+import Link from "next/link";
 
-import { useAuth0 } from "@auth0/auth0-react";
-import type { ReactNode } from "react";
-import { Button } from "react-aria-components";
+import { ThemeToggle } from "./components/theme-toggle";
+import { LandingActions } from "./components/landing-actions";
+import styles from "./landing.module.css";
 
-import { Sidebar } from "./components/sidebar";
-import { Header } from "./components/header";
-import { StatsBar } from "./components/stats-bar";
-import { ProxyInput } from "./components/proxy-input";
-import { ConfigPanel } from "./components/config-panel";
-import { SessionInput } from "./components/session-input";
-import { RunControls } from "./components/run-controls";
-import { ResultsTable } from "./components/results-table";
-import { History } from "./components/history";
-import { SessionDetailView } from "./components/session-detail";
-import { ProxyCheckerProvider, useProxyChecker } from "./components/proxy-checker-context";
+type Feature = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+};
 
-function OverviewPage() {
-  const { status } = useProxyChecker();
-  const hasResults = status === "done" || status === "running";
+const FEATURES: Feature[] = [
+  {
+    title: "Parallel health checks",
+    description:
+      "Validate huge proxy sets with low latency pipelines tuned for scale.",
+    icon: Zap,
+  },
+  {
+    title: "Deep protocol coverage",
+    description:
+      "Run consistent checks across HTTP and SOCKS endpoints with unified output.",
+    icon: Globe2,
+  },
+  {
+    title: "Anonymity scoring",
+    description:
+      "Classify risk and trust levels fast, so clean pools stay clean in production.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Latency intelligence",
+    description:
+      "Track response times, jitter, and timeout behavior before proxies fail live traffic.",
+    icon: Gauge,
+  },
+  {
+    title: "Session snapshots",
+    description:
+      "Keep historical runs organized for audits, diffs, and regression tracking.",
+    icon: Layers3,
+  },
+  {
+    title: "Operational alerts",
+    description:
+      "Catch degrading proxy quality early with thresholds built for real operations.",
+    icon: Timer,
+  },
+];
 
-    return (
-        <div
-            className="overview-container"
-            style={{ maxWidth: 960, width: "100%", display: "flex", flexDirection: "column", gap: 20 }}
-        >
-            <h1 style={{ fontSize: 14, fontWeight: 500, color: "var(--text-1)", lineHeight: 1.3 }}>
-                Overview
-            </h1>
+const STATS = [
+  { value: "15M+", label: "proxy checks monthly" },
+  { value: "99.95%", label: "pipeline availability" },
+  { value: "<180ms", label: "average validation roundtrip" },
+];
 
-            {hasResults && <StatsBar />}
-
-      <div
-        className="overview-grid"
-        style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(0, 2fr)", gap: 24 }}
-      >
-        <ProxyInput />
-        <ConfigPanel />
-      </div>
-
-      <SessionInput />
-      <RunControls />
-
-      {hasResults && <ResultsTable />}
-    </div>
-  );
-}
-
-function AppContent() {
-  const { currentView } = useProxyChecker();
-
-  return (
-    <div className="app-shell" style={{ display: "flex", minHeight: "100dvh", background: "var(--bg-0)" }}>
-      <Sidebar />
-      <div className="app-main" style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
-        <Header />
-        <main className="app-content" style={{ flex: 1, overflowY: "auto", padding: "20px 24px 48px" }}>
-          {currentView === "overview" && <OverviewPage />}
-          {currentView === "history" && <History />}
-          {currentView === "session-detail" && <SessionDetailView />}
-        </main>
-      </div>
-    </div>
-  );
-}
-
-function AuthGate({ children }: { children: ReactNode }) {
-  const { error, isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
-
-  if (isLoading) {
-    return (
-      <div
-        style={{
-          minHeight: "100dvh",
-          display: "grid",
-          placeItems: "center",
-          background: "var(--bg-0)",
-          color: "var(--text-1)",
-        }}
-      >
-        <span style={{ fontSize: 14, color: "var(--text-2)" }}>
-          Checking authentication...
-        </span>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div
-        style={{
-          minHeight: "100dvh",
-          display: "grid",
-          placeItems: "center",
-          background: "var(--bg-0)",
-          padding: 24,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 480,
-            width: "100%",
-            background: "var(--bg-1)",
-            border: "1px solid var(--border)",
-            borderRadius: 14,
-            padding: 24,
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-          }}
-        >
-          <h1 style={{ fontSize: 18, fontWeight: 600, color: "var(--text-1)" }}>
-            Login required
-          </h1>
-          <p style={{ fontSize: 13, color: "var(--text-2)", lineHeight: 1.5 }}>
-            Sign in with Auth0 to access the proxy dashboard and API features.
-          </p>
-          {error && (
-            <p style={{ fontSize: 12, color: "#b91c1c" }}>
-              Authentication error: {error.message}
-            </p>
-          )}
-          <Button
-            onPress={() => loginWithRedirect()}
-            style={{
-              marginTop: 4,
-              height: 34,
-              borderRadius: 8,
-              border: "1px solid var(--border)",
-              background: "var(--bg-hover)",
-              color: "var(--text-1)",
-              padding: "0 14px",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 500,
-            }}
-          >
-            Continue with Auth0
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-}
+const STEPS = [
+  {
+    title: "Ingest and normalize",
+    description:
+      "Drop in raw lists from any source and standardize host, port, and protocol quickly.",
+  },
+  {
+    title: "Run targeted policies",
+    description:
+      "Apply reliability, anonymity, and response-time checks matched to your workload.",
+  },
+  {
+    title: "Ship a clean pool",
+    description:
+      "Export verified proxy inventories directly into your tooling with full traceability.",
+  },
+];
 
 export default function Home() {
   return (
-    <AuthGate>
-      <ProxyCheckerProvider>
-        <AppContent />
-      </ProxyCheckerProvider>
-    </AuthGate>
+    <main className={styles.page}>
+      <div className={styles.backgroundAura} aria-hidden />
+
+      <header className={styles.topBar}>
+        <Link className={styles.brand} href="/">
+          <span className={styles.brandMark}>PC</span>
+          <span className={styles.brandText}>Proxy Checker</span>
+        </Link>
+
+        <nav className={styles.navLinks} style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 100 }} aria-label="Primary">
+          <a href="#features">Features</a>
+          <a href="#workflow">Workflow</a>
+          <Link href="/dashboard">Dashboard</Link>
+          <ThemeToggle />
+        </nav>
+      </header>
+
+      <section className={styles.hero}>
+        <span className={styles.kicker}>
+          <CheckCircle2 size={13} aria-hidden />
+          Built for fast proxy reliability at scale
+        </span>
+
+        <h1>
+          Validate millions of proxies with a calmer, sharper operations flow.
+        </h1>
+
+        <p>
+          Proxy Checker helps teams run dependable proxy fleets with precise
+          health checks, clean session history, and zero-noise monitoring.
+        </p>
+
+        <LandingActions />
+
+        <div className={styles.statGrid} aria-label="Platform metrics">
+          {STATS.map((stat) => (
+            <article key={stat.label} className={styles.statCard}>
+              <strong>{stat.value}</strong>
+              <span>{stat.label}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="features" className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2>Everything operators need. Nothing they do not.</h2>
+          <p>
+            Every surface is designed for speed, consistency, and low-friction
+            decisions under pressure.
+          </p>
+        </div>
+
+        <div className={styles.featureGrid}>
+          {FEATURES.map((feature) => (
+            <article key={feature.title} className={styles.featureCard}>
+              <feature.icon size={16} aria-hidden />
+              <h3>{feature.title}</h3>
+              <p>{feature.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="workflow" className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2>A workflow that stays fast as your proxy estate grows</h2>
+        </div>
+
+        <div className={styles.workflowGrid}>
+          {STEPS.map((step, index) => (
+            <article key={step.title} className={styles.workflowCard}>
+              <span>{`0${index + 1}`}</span>
+              <h3>{step.title}</h3>
+              <p>{step.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.bottomCta}>
+        <div>
+          <h2>Launch your first clean proxy pass in minutes.</h2>
+          <p>Use your existing Auth0 login and move straight into checks.</p>
+        </div>
+        <Link className={styles.inlineLink} href="/dashboard">
+          Open Dashboard
+          <ArrowUpRight size={14} aria-hidden />
+        </Link>
+      </section>
+    </main>
   );
 }
