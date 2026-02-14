@@ -124,12 +124,12 @@ export function ResultsTable() {
     return (
         <div>
             {/* Header row */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Results</span>
                     <span style={{ fontSize: 11, color: "var(--text-3)" }}>{rows.length}</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: 6 }}>
                     <TextField aria-label="Filter" value={filter} onChange={setFilter}>
                         <Label className="sr-only">Filter</Label>
                         <Input
@@ -233,8 +233,8 @@ export function ResultsTable() {
             </div>
 
             {/* Table */}
-            <div style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", overflowX: "auto", overflowY: "hidden" }}>
+                <table style={{ width: "100%", minWidth: 920, borderCollapse: "collapse" }}>
                     <thead>
                         <tr>
                             <th style={th}>#</th>

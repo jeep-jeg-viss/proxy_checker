@@ -2,18 +2,18 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+import { Button } from "react-aria-components";
 
 export function ThemeToggle() {
     const { theme, setTheme, resolvedTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
+    const hydrated = useSyncExternalStore(
+        () => () => undefined,
+        () => true,
+        () => false
+    );
 
-    // Prevent hydration mismatch
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    if (!mounted) {
+    if (!hydrated) {
         return <div style={{ width: 15, height: 15 }} />; // Placeholder to avoid layout shift
     }
 
@@ -26,8 +26,8 @@ export function ThemeToggle() {
     };
 
     return (
-        <button
-            onClick={toggleTheme}
+        <Button
+            onPress={toggleTheme}
             className="theme-toggle"
             aria-label="Toggle theme"
             title={`Current: ${theme === 'system' ? `System (${resolvedTheme})` : theme}`}
@@ -49,6 +49,6 @@ export function ThemeToggle() {
             ) : (
                 <Sun size={15} />
             )}
-        </button>
+        </Button>
     );
 }

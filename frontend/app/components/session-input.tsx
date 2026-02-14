@@ -32,7 +32,7 @@ export function SessionInput() {
         <div
             style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
                 gap: 16,
                 padding: "12px 14px",
                 background: "var(--bg-1)",

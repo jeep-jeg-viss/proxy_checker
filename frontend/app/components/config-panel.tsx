@@ -122,7 +122,7 @@ export function ConfigPanel() {
             </div>
 
             {/* Timeout + Workers */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
                 <div>
                     <TextField
                         aria-label="Timeout"
@@ -164,7 +164,7 @@ export function ConfigPanel() {
             </div>
 
             {/* Proxy type + Delimiter */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
                 <Select aria-label="Proxy type" selectedKey={config.proxyType} onSelectionChange={(k) => updateConfig("proxyType", String(k))}>
                     <Label style={lbl}>Type</Label>
                     <Button id="config-proxy-type" className="ra-btn" style={{ ...inp, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>

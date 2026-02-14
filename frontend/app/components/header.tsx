@@ -1,6 +1,7 @@
 "use client";
 
 import { useProxyChecker } from "./proxy-checker-context";
+import { Button } from "react-aria-components";
 
 export function Header() {
     const { currentView, selectedSession, setCurrentView } = useProxyChecker();
@@ -25,24 +26,36 @@ export function Header() {
         >
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span
-                    style={{
-                        fontSize: 13,
-                        color: "var(--text-2)",
-                        cursor: "pointer",
-                    }}
-                    onClick={() => setCurrentView("overview")}
+                    style={{ display: "inline-flex", alignItems: "center" }}
                 >
-                    Proxy Checker
+                    <Button
+                        onPress={() => setCurrentView("overview")}
+                        style={{
+                            fontSize: 13,
+                            color: "var(--text-2)",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                        }}
+                    >
+                        Proxy Checker
+                    </Button>
                 </span>
                 <span style={{ fontSize: 13, color: "var(--text-3)" }}>/</span>
                 {currentView === "session-detail" ? (
                     <>
-                        <span
-                            style={{ fontSize: 13, color: "var(--text-2)", cursor: "pointer" }}
-                            onClick={() => setCurrentView("history")}
+                        <Button
+                            onPress={() => setCurrentView("history")}
+                            style={{
+                                fontSize: 13,
+                                color: "var(--text-2)",
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                            }}
                         >
                             History
-                        </span>
+                        </Button>
                         <span style={{ fontSize: 13, color: "var(--text-3)" }}>/</span>
                         <span style={{ fontSize: 13, color: "var(--text-1)", fontWeight: 500 }}>
                             {viewLabel}

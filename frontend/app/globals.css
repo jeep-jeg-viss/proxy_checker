@@ -225,6 +225,82 @@ select {
   transition: border-color 80ms, background 80ms, color 80ms, box-shadow 80ms, filter 80ms, transform 80ms;
 }
 
+.app-shell {
+  display: flex;
+  min-height: 100dvh;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 48px;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .overview-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px !important;
+  }
+
+  .sidebar-brand {
+    margin-bottom: 10px !important;
+  }
+
+  .sidebar-nav {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: 6px !important;
+  }
+
+  .sidebar-nav button {
+    width: auto !important;
+    min-width: 120px;
+  }
+
+  .sidebar-footer {
+    padding: 8px 2px 0 !important;
+  }
+
+  .app-content {
+    padding: 16px 14px 32px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar-nav button {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+    justify-content: center;
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

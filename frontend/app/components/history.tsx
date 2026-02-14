@@ -46,7 +46,7 @@ function Tag({ label }: { label: string }) {
     );
 }
 
-function CountryPill({ code, name, count }: { code: string; name: string; count: number }) {
+function CountryPill({ name, count }: { name: string; count: number }) {
     return (
         <span
             title={`${name}: ${count}`}
@@ -62,19 +62,10 @@ function CountryPill({ code, name, count }: { code: string; name: string; count:
                 whiteSpace: "nowrap",
             }}
         >
-            <span style={{ fontSize: 13 }}>{getFlagEmoji(code)}</span>
+            <span style={{ color: "var(--text-3)" }}>{name}</span>
             {count}
         </span>
     );
-}
-
-function getFlagEmoji(countryCode: string): string {
-    if (!countryCode || countryCode.length !== 2) return "🌍";
-    const codePoints = countryCode
-        .toUpperCase()
-        .split("")
-        .map((c) => 127397 + c.charCodeAt(0));
-    return String.fromCodePoint(...codePoints);
 }
 
 function SessionCard({ session, onOpen, onDelete }: {
@@ -98,47 +89,55 @@ function SessionCard({ session, onOpen, onDelete }: {
                 background: "var(--bg-1)",
                 border: "1px solid var(--border)",
                 borderRadius: "var(--radius-lg)",
-                cursor: "pointer",
-                transition: "border-color 100ms, background 100ms",
-            }}
-            onClick={onOpen}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--border-hover)";
-                e.currentTarget.style.background = "var(--bg-2)";
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--border)";
-                e.currentTarget.style.background = "var(--bg-1)";
+                transition: "border-color 100ms",
             }}
         >
             {/* Top row: name + time */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
                 <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-1)" }}>{session.name}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 11, color: "var(--text-3)" }} title={formatDate(session.created_at)}>
                         {relativeTime(session.created_at)}
                     </span>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    <Button
+                        className="ra-btn"
+                        onPress={onOpen}
                         style={{
-                            background: "none",
-                            border: "none",
+                            fontSize: 11,
+                            fontWeight: 500,
+                            padding: "3px 8px",
+                            borderRadius: "var(--radius)",
+                            background: "var(--bg-2)",
+                            border: "1px solid var(--border)",
+                            color: "var(--text-2)",
                             cursor: "pointer",
-                            color: "var(--text-3)",
-                            padding: 2,
+                        }}
+                    >
+                        Open
+                    </Button>
+                    <Button
+                        className="ra-btn"
+                        aria-label={`Delete ${session.name}`}
+                        onPress={onDelete}
+                        style={{
+                            background: "var(--red-muted)",
+                            border: "1px solid rgba(217,83,79,0.25)",
+                            cursor: "pointer",
+                            color: "var(--red)",
+                            padding: "3px 8px",
                             borderRadius: "var(--radius)",
                             display: "flex",
                             alignItems: "center",
-                            transition: "color 80ms",
+                            gap: 4,
+                            fontSize: 11,
+                            fontWeight: 500,
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--red)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-3)")}
-                        title="Delete session"
                     >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                         </svg>
-                    </button>
+                        Delete
+                    </Button>
                 </div>
             </div>
 
@@ -152,7 +151,7 @@ function SessionCard({ session, onOpen, onDelete }: {
             )}
 
             {/* Stats row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: topCountries.length > 0 ? 10 : 0 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 16, marginBottom: topCountries.length > 0 ? 10 : 0 }}>
                 <span style={{ fontSize: 12, color: "var(--text-2)" }}>
                     <span style={{ fontWeight: 500, color: "var(--text-1)" }}>{session.stats.total}</span> total
                 </span>
@@ -175,11 +174,7 @@ function SessionCard({ session, onOpen, onDelete }: {
             {/* Countries */}
             {topCountries.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                    {topCountries.map(([name, count]) => {
-                        // Find the country code from the name
-                        const code = name; // For now we'll handle display
-                        return <CountryPill key={name} code="" name={name} count={count} />;
-                    })}
+                    {topCountries.map(([name, count]) => <CountryPill key={name} name={name} count={count} />)}
                     {Object.keys(countries).length > 5 && (
                         <span style={{ fontSize: 11, color: "var(--text-3)", padding: "2px 4px" }}>
                             +{Object.keys(countries).length - 5} more
@@ -201,17 +196,6 @@ export function History() {
         const tagSet = new Set<string>();
         sessions.forEach((s) => s.tags.forEach((t) => tagSet.add(t)));
         return Array.from(tagSet).sort();
-    }, [sessions]);
-
-    // Collect all unique countries
-    const allCountries = useMemo(() => {
-        const countrySet = new Set<string>();
-        sessions.forEach((s) => {
-            if (s.stats.countries) {
-                Object.keys(s.stats.countries).forEach((c) => countrySet.add(c));
-            }
-        });
-        return Array.from(countrySet).sort();
     }, [sessions]);
 
     // Filter sessions
@@ -237,7 +221,7 @@ export function History() {
     return (
         <div style={{ maxWidth: 960, display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 14, fontWeight: 500, color: "var(--text-1)" }}>Session History</span>
                     <span style={{ fontSize: 12, color: "var(--text-3)" }}>{sessions.length} sessions</span>
@@ -269,7 +253,7 @@ export function History() {
             </div>
 
             {/* Filters */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
                 <TextField aria-label="Search sessions" value={search} onChange={setSearch} style={{ flex: 1 }}>
                     <Label className="sr-only">Search</Label>
                     <Input
@@ -289,9 +273,10 @@ export function History() {
                 </TextField>
 
                 {allTags.length > 0 && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <button
-                            onClick={() => setTagFilter("")}
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4 }}>
+                        <Button
+                            onPress={() => setTagFilter("")}
+                            aria-pressed={!tagFilter}
                             style={{
                                 padding: "5px 8px",
                                 fontSize: 11,
@@ -305,11 +290,12 @@ export function History() {
                             }}
                         >
                             All
-                        </button>
+                        </Button>
                         {allTags.map((tag) => (
-                            <button
+                            <Button
                                 key={tag}
-                                onClick={() => setTagFilter(tagFilter === tag ? "" : tag)}
+                                onPress={() => setTagFilter(tagFilter === tag ? "" : tag)}
+                                aria-pressed={tagFilter === tag}
                                 style={{
                                     padding: "5px 8px",
                                     fontSize: 11,
@@ -324,7 +310,7 @@ export function History() {
                                 }}
                             >
                                 {tag}
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 )}

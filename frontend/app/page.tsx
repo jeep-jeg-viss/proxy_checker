@@ -17,10 +17,16 @@ function OverviewPage() {
   const hasResults = status === "done" || status === "running";
 
   return (
-    <div style={{ maxWidth: 960, display: "flex", flexDirection: "column", gap: 20 }}>
+    <div
+      className="overview-container"
+      style={{ maxWidth: 960, width: "100%", display: "flex", flexDirection: "column", gap: 20 }}
+    >
       {hasResults && <StatsBar />}
 
-      <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 24 }}>
+      <div
+        className="overview-grid"
+        style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(0, 2fr)", gap: 24 }}
+      >
         <ProxyInput />
         <ConfigPanel />
       </div>
@@ -37,11 +43,11 @@ function AppContent() {
   const { currentView } = useProxyChecker();
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "var(--bg-0)" }}>
+    <div className="app-shell" style={{ display: "flex", minHeight: "100dvh", background: "var(--bg-0)" }}>
       <Sidebar />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
+      <div className="app-main" style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
         <Header />
-        <main style={{ flex: 1, overflowY: "auto", padding: "20px 24px 48px" }}>
+        <main className="app-content" style={{ flex: 1, overflowY: "auto", padding: "20px 24px 48px" }}>
           {currentView === "overview" && <OverviewPage />}
           {currentView === "history" && <History />}
           {currentView === "session-detail" && <SessionDetailView />}

@@ -89,13 +89,12 @@ export function SessionDetailView() {
     const [filter, setFilter] = useState("");
     const [countryFilter, setCountryFilter] = useState("");
 
-    if (!selectedSession) return null;
-
     const s = selectedSession;
-    const countries = s.stats.countries || {};
+    const countries = s?.stats.countries || {};
     const countryList = Object.entries(countries).sort((a, b) => b[1] - a[1]);
 
     const rows = useMemo(() => {
+        if (!s) return [];
         let result = s.results;
         if (filter) {
             const q = filter.toLowerCase();
@@ -110,7 +109,9 @@ export function SessionDetailView() {
             result = result.filter((r) => r.country === countryFilter);
         }
         return result;
-    }, [s.results, filter, countryFilter]);
+    }, [s, filter, countryFilter]);
+
+    if (!s) return null;
 
     const th: React.CSSProperties = {
         padding: "8px 12px",
@@ -229,8 +230,9 @@ export function SessionDetailView() {
                         Countries ({countryList.length})
                     </span>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                        <button
-                            onClick={() => setCountryFilter("")}
+                        <Button
+                            onPress={() => setCountryFilter("")}
+                            aria-pressed={!countryFilter}
                             style={{
                                 padding: "4px 10px",
                                 fontSize: 12,
@@ -244,11 +246,12 @@ export function SessionDetailView() {
                             }}
                         >
                             All
-                        </button>
+                        </Button>
                         {countryList.map(([name, count]) => (
-                            <button
+                            <Button
                                 key={name}
-                                onClick={() => setCountryFilter(countryFilter === name ? "" : name)}
+                                onPress={() => setCountryFilter(countryFilter === name ? "" : name)}
+                                aria-pressed={countryFilter === name}
                                 style={{
                                     display: "inline-flex",
                                     alignItems: "center",
@@ -267,19 +270,19 @@ export function SessionDetailView() {
                             >
                                 {name}
                                 <span style={{ fontSize: 11, color: "var(--text-3)" }}>{count}</span>
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 </div>
             )}
 
             {/* Filter + Export */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Results</span>
                     <span style={{ fontSize: 11, color: "var(--text-3)" }}>{rows.length}</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: 6 }}>
                     <TextField aria-label="Filter" value={filter} onChange={setFilter}>
                         <Label className="sr-only">Filter</Label>
                         <Input
@@ -327,8 +330,8 @@ export function SessionDetailView() {
             </div>
 
             {/* Table */}
-            <div style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", overflowX: "auto", overflowY: "hidden" }}>
+                <table style={{ width: "100%", minWidth: 920, borderCollapse: "collapse" }}>
                     <thead>
                         <tr>
                             <th style={th}>#</th>
