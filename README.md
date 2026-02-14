@@ -1,14 +1,56 @@
 # Proxy Checker & HTTP Stress Tester
 
-A toolkit for checking proxy servers and stress-testing HTTP endpoints, built with Python.
+A toolkit for checking proxy servers and stress-testing HTTP endpoints, with a FastAPI backend and Next.js frontend.
 
-## Setup
+## Prerequisites
 
-Requires Python 3.13+ and [uv](https://docs.astral.sh/uv/).
+- **Python 3.13+** and [uv](https://docs.astral.sh/uv/) (for backend)
+- **Node.js 18+** and **npm** (for frontend)
+
+---
+
+## Quick Start
+
+### 1. Install Dependencies
 
 ```bash
+# Backend (from project root)
 uv sync
+
+# Frontend
+cd frontend
+npm install
 ```
+
+### 2. Start the Backend
+
+Open a terminal in the **project root** and run:
+
+```bash
+uv run uvicorn api:app --reload --port 8000
+```
+
+The API will be available at **http://localhost:8000**. You can verify it's running with:
+
+```bash
+curl http://localhost:8000/api/health
+# → {"status":"ok"}
+```
+
+### 3. Start the Frontend
+
+Open a **second terminal**, navigate to the `frontend/` directory, and run:
+
+```bash
+cd frontend
+npm run dev
+```
+
+The app will be available at **http://localhost:3000**. The frontend automatically proxies all `/api/*` requests to the backend on port 8000.
+
+### 4. Open the App
+
+Navigate to [http://localhost:3000](http://localhost:3000) in your browser — you're all set!
 
 ---
 
