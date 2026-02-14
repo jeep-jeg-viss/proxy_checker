@@ -11,7 +11,7 @@ const NAV: { label: string; view: ViewName; iconPath: string }[] = [
 ];
 
 export function Sidebar() {
-    const { currentView, setCurrentView, sessions } = useProxyChecker();
+    const { currentView, setCurrentView, sessions, sessionsLoading } = useProxyChecker();
 
     const isActive = (view: ViewName, label: string) => {
         if (label === "History") return currentView === "history" || currentView === "session-detail";
@@ -102,7 +102,23 @@ export function Sidebar() {
                             >
                                 <path d={item.iconPath} />
                             </svg>
-                            {item.label}
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                                {item.label}
+                                {item.label === "History" && sessionsLoading && (
+                                    <span
+                                        className="run-spinner"
+                                        aria-hidden="true"
+                                        style={{
+                                            width: 10,
+                                            height: 10,
+                                            border: "1.5px solid var(--bg-3)",
+                                            borderTopColor: "var(--accent)",
+                                            borderRadius: "50%",
+                                            animation: "spin 0.6s linear infinite",
+                                        }}
+                                    />
+                                )}
+                            </span>
                             {item.label === "History" && sessions.length > 0 && (
                                 <span
                                     style={{

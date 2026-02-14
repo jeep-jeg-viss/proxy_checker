@@ -187,7 +187,7 @@ function SessionCard({ session, onOpen, onDelete }: {
 }
 
 export function History() {
-    const { sessions, loadSession, deleteSession, fetchSessions } = useProxyChecker();
+    const { sessions, sessionsLoading, sessionsError, loadSession, deleteSession, fetchSessions } = useProxyChecker();
     const [search, setSearch] = useState("");
     const [tagFilter, setTagFilter] = useState("");
 
@@ -226,10 +226,13 @@ export function History() {
                     <h1 style={{ fontSize: 14, fontWeight: 500, color: "var(--text-1)", lineHeight: 1.3 }}>
                         Session History
                     </h1>
-                    <span style={{ fontSize: 12, color: "var(--text-3)" }}>{sessions.length} sessions</span>
+                    <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+                        {sessions.length} sessions {sessionsLoading ? "• updating…" : ""}
+                    </span>
                 </div>
                 <Button
                     className="ra-btn"
+                    isDisabled={sessionsLoading}
                     onPress={() => fetchSessions()}
                     style={{
                         display: "inline-flex",
@@ -243,16 +246,54 @@ export function History() {
                         border: "1px solid var(--btn-border)",
                         color: "var(--btn-text)",
                         cursor: "pointer",
+                        opacity: sessionsLoading ? 0.75 : 1,
                     }}
                 >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                        <path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                        <path d="M21 21v-5h-5" />
-                    </svg>
-                    Refresh
+                    {sessionsLoading ? (
+                        <>
+                            <span
+                                className="run-spinner"
+                                aria-hidden="true"
+                                style={{
+                                    width: 12,
+                                    height: 12,
+                                    border: "1.5px solid var(--bg-3)",
+                                    borderTopColor: "var(--accent)",
+                                    borderRadius: "50%",
+                                    animation: "spin 0.6s linear infinite",
+                                }}
+                            />
+                            Refreshing…
+                        </>
+                    ) : (
+                        <>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                <path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                                <path d="M21 21v-5h-5" />
+                            </svg>
+                            Refresh
+                        </>
+                    )}
                 </Button>
             </div>
+
+            {sessionsError && (
+                <div
+                    role="status"
+                    aria-live="polite"
+                    style={{
+                        padding: "8px 10px",
+                        fontSize: 12,
+                        color: "var(--red)",
+                        background: "var(--red-muted)",
+                        border: "1px solid rgba(217,83,79,0.25)",
+                        borderRadius: "var(--radius)",
+                    }}
+                >
+                    Couldn&apos;t refresh history. Showing last loaded data.
+                </div>
+            )}
 
             {/* Filters */}
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
@@ -319,7 +360,38 @@ export function History() {
             </div>
 
             {/* Session list */}
-            {filtered.length === 0 ? (
+            {sessionsLoading && sessions.length === 0 ? (
+                <div
+                    role="status"
+                    aria-live="polite"
+                    style={{
+                        padding: "48px 24px",
+                        textAlign: "center",
+                        color: "var(--text-2)",
+                        fontSize: 13,
+                        background: "var(--bg-1)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--radius-lg)",
+                    }}
+                >
+                    <span
+                        className="run-spinner"
+                        aria-hidden="true"
+                        style={{
+                            display: "inline-block",
+                            width: 14,
+                            height: 14,
+                            marginRight: 8,
+                            verticalAlign: "text-bottom",
+                            border: "1.5px solid var(--bg-3)",
+                            borderTopColor: "var(--accent)",
+                            borderRadius: "50%",
+                            animation: "spin 0.6s linear infinite",
+                        }}
+                    />
+                    Loading session history…
+                </div>
+            ) : filtered.length === 0 ? (
                 <div
                     style={{
                         padding: "48px 24px",

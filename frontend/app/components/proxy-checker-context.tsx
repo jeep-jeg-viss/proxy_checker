@@ -102,6 +102,8 @@ interface ProxyCheckerState {
 
     // Sessions history
     sessions: SessionSummary[];
+    sessionsLoading: boolean;
+    sessionsError: string | null;
     fetchSessions: () => Promise<void>;
     selectedSession: SessionDetail | null;
     loadSession: (id: string) => Promise<void>;
@@ -166,7 +168,10 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
 
     // History
     const [sessions, setSessions] = useState<SessionSummary[]>([]);
+    const [sessionsLoading, setSessionsLoading] = useState(false);
+    const [sessionsError, setSessionsError] = useState<string | null>(null);
     const [selectedSession, setSelectedSession] = useState<SessionDetail | null>(null);
+    const sessionsFetchCountRef = useRef(0);
 
     const abortRef = useRef<AbortController | null>(null);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -372,6 +377,10 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
 
     // ── Fetch sessions list ─────────────────────────────────────────────
     const fetchSessions = useCallback(async () => {
+        sessionsFetchCountRef.current += 1;
+        setSessionsLoading(true);
+        setSessionsError(null);
+
         try {
             const headers = await getAuthHeaders();
             const res = await fetch("/api/sessions", { headers });
@@ -392,9 +401,17 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
                         },
                     }))
                 );
+            } else {
+                setSessionsError(`Failed to fetch sessions (${res.status})`);
             }
         } catch (err) {
             console.error("Failed to fetch sessions:", err);
+            setSessionsError("Failed to fetch sessions");
+        } finally {
+            sessionsFetchCountRef.current = Math.max(0, sessionsFetchCountRef.current - 1);
+            if (sessionsFetchCountRef.current === 0) {
+                setSessionsLoading(false);
+            }
         }
     }, [getAuthHeaders]);
 
@@ -608,6 +625,8 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
                 currentView,
                 setCurrentView,
                 sessions,
+                sessionsLoading,
+                sessionsError,
                 fetchSessions,
                 selectedSession,
                 loadSession,
