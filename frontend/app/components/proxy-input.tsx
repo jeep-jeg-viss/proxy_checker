@@ -1,16 +1,28 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { AlertTriangle, CircleX, Clipboard, Info, type LucideIcon, Upload } from "lucide-react";
+import { useRef, useState, useMemo } from "react";
+import {
+    AlertTriangle,
+    CircleX,
+    Clipboard,
+    Info,
+    type LucideIcon,
+    Upload,
+    Wand2,
+    Copy,
+    Network
+} from "lucide-react";
 import {
     Button,
-    TextArea,
     TextField,
     Label,
     FileTrigger,
+    Input
 } from "react-aria-components";
 import { useProxyChecker, type ValidationIssue } from "./proxy-checker-context";
 import { UiIcon } from "./ui-icon";
+import { LiveProxyEditor } from "./live-proxy-editor";
+import { extractProxies, normalizeProxies, detectFormat } from "../lib/proxy-parser";
 
 const SEVERITY_COLORS: Record<string, { color: string; icon: LucideIcon }> = {
     error: { color: "var(--red)", icon: CircleX },
@@ -46,13 +58,20 @@ function IssueList({ issues }: { issues: ValidationIssue[] }) {
 
 export function ProxyInput() {
     const { proxyText, setProxyText, validation, touched, touch } = useProxyChecker();
-    const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
     const [pasteHelp, setPasteHelp] = useState("");
-    const lineCount = proxyText ? proxyText.split("\n").filter((l) => l.trim()).length : 0;
+    const [showBulkPort, setShowBulkPort] = useState(false);
+    const [bulkPortValue, setBulkPortValue] = useState("8080");
+
+    // Stats based on tokenizer
+    const { validCount, missingPortCount } = useMemo(() => {
+        const matches = extractProxies(proxyText);
+        const valid = matches.filter(m => m.confidence === "confirmed" || m.confidence === "ambiguous");
+        const missingPort = matches.filter(m => m.format === "unknown" && m.confidence === "ambiguous").length; // Heuristic: ambiguous often means missing port
+        return { validCount: valid.length, missingPortCount: missingPort };
+    }, [proxyText]);
 
     const issues = touched.proxyText ? validation.proxyText : [];
     const hasError = issues.some((i) => i.severity === "error");
-    const hasWarning = issues.some((i) => i.severity === "warning");
 
     const handleFileSelect = (e: FileList | null) => {
         if (!e || e.length === 0) return;
@@ -60,45 +79,60 @@ export function ProxyInput() {
         const reader = new FileReader();
         reader.onload = () => {
             if (typeof reader.result === "string") {
-                setProxyText(reader.result);
+                const text = reader.result;
+                const fmt = detectFormat(text);
+
+                setProxyText(text);
                 touch("proxyText");
+                if (fmt !== "unknown" && fmt !== "ip:port") {
+                    setPasteHelp(`Detected format: ${fmt}. Click 'Clean & Format' to standardize.`);
+                } else {
+                    setPasteHelp(`Loaded ${file.name}`);
+                }
             }
         };
         reader.readAsText(file);
     };
 
-    const borderColor = hasError ? "var(--red)" : hasWarning ? "var(--orange)" : "var(--border)";
-    const counterColor = hasError ? "var(--red)" : hasWarning ? "var(--orange)" : "var(--text-3)";
-    const normalizeClipboardText = (text: string) => text.replace(/\r\n?/g, "\n");
+    const handleClean = () => {
+        const matches = extractProxies(proxyText);
+        const cleaned = normalizeProxies(matches);
+        const diff = matches.length - cleaned.split('\n').filter(l => l).length;
 
-    const handlePasteFromClipboard = async () => {
-        setPasteHelp("");
-        const clipboard = navigator.clipboard;
+        setProxyText(cleaned);
+        touch("proxyText");
 
-        if (!clipboard?.readText) {
-            setPasteHelp("Clipboard read is unavailable here. Use Ctrl+V in the input box.");
-            textAreaRef.current?.focus();
-            return;
-        }
-
-        try {
-            const text = normalizeClipboardText(await clipboard.readText());
-            if (!text.trim()) {
-                setPasteHelp("Clipboard is empty.");
-                textAreaRef.current?.focus();
-                return;
-            }
-
-            setProxyText(text);
-            touch("proxyText");
-            textAreaRef.current?.focus();
-            const endPos = text.length;
-            textAreaRef.current?.setSelectionRange(endPos, endPos);
-        } catch {
-            setPasteHelp("Clipboard access blocked. Click input and press Ctrl+V.");
-            textAreaRef.current?.focus();
+        if (diff > 0) {
+            setPasteHelp(`Cleaned & optimized. Removed ${diff} duplicates/invalid entries.`);
+        } else {
+            setPasteHelp("Formatted to standard IP:Port:User:Pass.");
         }
     };
+
+    const handleCopyNormalized = () => {
+        const matches = extractProxies(proxyText);
+        const cleaned = normalizeProxies(matches);
+        navigator.clipboard.writeText(cleaned);
+        setPasteHelp("Copied normalized list to clipboard.");
+    };
+
+    const handleBulkAddPort = () => {
+        if (!bulkPortValue) return;
+        const matches = extractProxies(proxyText);
+        const fixed = matches.map(m => {
+            if (m.format === "unknown" && m.confidence === "ambiguous") {
+                return `${m.ip}:${bulkPortValue}`;
+            }
+            return m.original;
+        }).join("\n");
+
+        setProxyText(fixed);
+        touch("proxyText");
+        setShowBulkPort(false);
+        setPasteHelp(`Added port ${bulkPortValue} to standalone IPs.`);
+    };
+
+    const borderColor = hasError ? "var(--red)" : "var(--border)";
 
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -111,13 +145,52 @@ export function ProxyInput() {
                     marginBottom: 8,
                 }}
             >
-                <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Proxy list</span>
-                <span style={{ fontSize: 11, color: counterColor, fontVariantNumeric: "tabular-nums" }}>
-                    {lineCount} {lineCount === 1 ? "proxy" : "proxies"}
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Proxy editor</span>
+                    {validCount > 0 && (
+                        <span style={{ fontSize: 11, color: "var(--green)", background: "var(--green-muted)", padding: "2px 6px", borderRadius: 4 }}>
+                            {validCount} recognized
+                        </span>
+                    )}
+                </div>
+
+                {missingPortCount > 0 && !showBulkPort && (
+                    <button
+                        onClick={() => setShowBulkPort(true)}
+                        style={{ fontSize: 11, color: "var(--accent)", border: 0, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}
+                    >
+                        <UiIcon icon={Network} size={11} />
+                        Fix missing ports ({missingPortCount})
+                    </button>
+                )}
             </div>
 
-            {/* Input */}
+            {/* Bulk Port Input */}
+            {showBulkPort && (
+                <div style={{
+                    marginBottom: 8, padding: 8, background: "var(--bg-1)",
+                    border: "1px solid var(--border)", borderRadius: "var(--radius)",
+                    display: "flex", alignItems: "center", gap: 8
+                }}>
+                    <Label style={{ fontSize: 12 }}>Default Port:</Label>
+                    <Input
+                        value={bulkPortValue}
+                        onChange={(e) => setBulkPortValue(e.target.value)}
+                        style={{
+                            width: 60, padding: "4px", borderRadius: 4,
+                            border: "1px solid var(--border)", fontSize: 12
+                        }}
+                    />
+                    <Button onPress={handleBulkAddPort} style={{ fontSize: 12, padding: "4px 8px", background: "var(--accent)", color: "#fff", border: 0, borderRadius: 4, cursor: "pointer" }}>
+                        Apply
+                    </Button>
+                    <Button onPress={() => setShowBulkPort(false)} style={{ fontSize: 12, padding: "4px 8px", background: "transparent", color: "var(--text-2)", border: 0, cursor: "pointer" }}>
+                        Cancel
+                    </Button>
+                </div>
+            )}
+
+            {/* Editor */}
             <TextField
                 aria-label="Proxy list"
                 value={proxyText}
@@ -126,42 +199,36 @@ export function ProxyInput() {
                     if (!touched.proxyText && v.trim()) touch("proxyText");
                 }}
                 isInvalid={hasError}
-                style={{ flex: 1, display: "flex", flexDirection: "column" }}
+                style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}
             >
                 <Label className="sr-only">Proxy list</Label>
-                <TextArea
-                    ref={textAreaRef}
-                    id="proxy-input-textarea"
-                    placeholder={`ip:port\nip:port:user:pass`}
-                    rows={9}
-                    style={{
-                        flex: 1,
-                        width: "100%",
-                        background: "var(--bg-2)",
-                        border: `1px solid ${borderColor}`,
-                        borderRadius: "var(--radius-lg)",
-                        padding: "10px 12px",
-                        color: "var(--text-1)",
-                        fontSize: 12,
-                        fontFamily: "var(--font-mono), monospace",
-                        lineHeight: 1.65,
-                        resize: "vertical",
-                        outline: "none",
-                        transition: "border-color 80ms",
-                    }}
-                    onBlur={() => touch("proxyText")}
-                />
+                <div style={{
+                    flex: 1,
+                    position: "relative",
+                    border: `1px solid ${borderColor}`,
+                    borderRadius: "var(--radius-lg)",
+                    transition: "border-color 80ms",
+                }}>
+                    <LiveProxyEditor
+                        value={proxyText}
+                        onChange={(v) => {
+                            setProxyText(v);
+                            if (!touched.proxyText && v.trim()) touch("proxyText");
+                        }}
+                        onBlur={() => touch("proxyText")}
+                    />
+                </div>
             </TextField>
 
             {/* Validation issues */}
             <IssueList issues={issues} />
 
-            {/* Actions */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+            {/* Actions Toolbar */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
                 <Button
-                    id="paste-clipboard-btn"
+                    id="clean-format-btn"
                     className="ra-btn"
-                    onPress={handlePasteFromClipboard}
+                    onPress={handleClean}
                     style={{
                         display: "inline-flex",
                         alignItems: "center",
@@ -171,15 +238,39 @@ export function ProxyInput() {
                         padding: "5px 10px",
                         borderRadius: "var(--radius)",
                         background: "var(--accent-muted)",
-                        border: "1px solid var(--accent)",
+                        border: "1px solid var(--accent-muted)",
                         color: "var(--accent)",
                         cursor: "pointer",
-                        transition: "border-color 80ms, color 80ms, background 80ms",
                     }}
                 >
-                    <UiIcon icon={Clipboard} size={12} strokeWidth={2} />
-                    Paste
+                    <UiIcon icon={Wand2} size={12} strokeWidth={2} />
+                    Clean & Format
                 </Button>
+
+                <Button
+                    id="copy-normalized-btn"
+                    className="ra-btn"
+                    onPress={handleCopyNormalized}
+                    style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 5,
+                        fontSize: 12,
+                        fontWeight: 500,
+                        padding: "5px 10px",
+                        borderRadius: "var(--radius)",
+                        background: "var(--bg-1)",
+                        border: "1px solid var(--border)",
+                        color: "var(--text-2)",
+                        cursor: "pointer",
+                    }}
+                >
+                    <UiIcon icon={Copy} size={12} strokeWidth={2} />
+                    Copy
+                </Button>
+
+                <div style={{ width: 1, height: 16, background: "var(--border)", margin: "0 4px" }} />
+
                 <FileTrigger acceptedFileTypes={[".txt", ".csv"]} onSelect={handleFileSelect}>
                     <Button
                         id="upload-file-btn"
@@ -192,17 +283,17 @@ export function ProxyInput() {
                             fontWeight: 500,
                             padding: "5px 10px",
                             borderRadius: "var(--radius)",
-                            background: "var(--btn-surface)",
-                            border: "1px solid var(--btn-border)",
-                            color: "var(--btn-text)",
+                            background: "var(--bg-1)",
+                            border: "1px solid var(--border)",
+                            color: "var(--text-2)",
                             cursor: "pointer",
-                            transition: "border-color 80ms, color 80ms, background 80ms",
                         }}
                     >
                         <UiIcon icon={Upload} size={12} strokeWidth={2} />
-                        Upload
+                        Import
                     </Button>
                 </FileTrigger>
+
                 {proxyText && (
                     <Button
                         id="clear-proxies-btn"
@@ -217,18 +308,37 @@ export function ProxyInput() {
                             border: "1px solid var(--border)",
                             color: "var(--red)",
                             cursor: "pointer",
-                            transition: "border-color 80ms, background 80ms",
                         }}
                     >
                         Clear
                     </Button>
                 )}
             </div>
+
+            {/* Helper Message/Toast */}
             {pasteHelp && (
-                <span style={{ marginTop: 4, fontSize: 11, color: "var(--text-3)" }}>
+                <div style={{
+                    marginTop: 8,
+                    fontSize: 11,
+                    color: "var(--text-2)",
+                    background: "var(--bg-1)",
+                    padding: "4px 8px",
+                    borderRadius: 4,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    animation: "fadeIn 0.2s"
+                }}>
+                    <UiIcon icon={Info} size={12} />
                     {pasteHelp}
-                </span>
+                </div>
             )}
+            <style jsx>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(-2px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
         </div>
     );
 }
