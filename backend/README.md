@@ -18,6 +18,18 @@ uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
+## Run With Docker Compose
+
+```bash
+cd backend
+Copy-Item .env.example .env
+docker compose up --build
+```
+
+- Service name: `backend`
+- API URL: `http://localhost:8000`
+- Compose passes values from `backend/.env` into the container via `env_file`.
+
 ## Supabase Postgres
 
 - Set `DATABASE_URL` in `backend/.env` (template in `backend/.env.example`).
