@@ -1,13 +1,15 @@
 "use client";
 
+import { History as HistoryIcon, LayoutGrid, Shield } from "lucide-react";
 import { useProxyChecker, type ViewName } from "./proxy-checker-context";
 import { Button } from "react-aria-components";
 
 import { ThemeToggle } from "./theme-toggle";
+import { UiIcon } from "./ui-icon";
 
-const NAV: { label: string; view: ViewName; iconPath: string }[] = [
-    { label: "Overview", view: "overview", iconPath: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" },
-    { label: "History", view: "history", iconPath: "M12 3a9 9 0 1 0 9 9M12 7v5l3 2" },
+const NAV: { label: string; view: ViewName; icon: typeof LayoutGrid }[] = [
+    { label: "Overview", view: "overview", icon: LayoutGrid },
+    { label: "History", view: "history", icon: HistoryIcon },
 ];
 
 export function Sidebar() {
@@ -54,9 +56,7 @@ export function Sidebar() {
                         justifyContent: "center",
                     }}
                 >
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-1)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
+                    <UiIcon icon={Shield} size={12} strokeWidth={2.3} color="var(--text-1)" />
                 </div>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>
                     Proxy Checker
@@ -89,19 +89,12 @@ export function Sidebar() {
                                 transition: "background 80ms, color 80ms",
                             }}
                         >
-                            <svg
-                                width="15"
-                                height="15"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                style={{ flexShrink: 0, opacity: active ? 1 : 0.5 }}
-                            >
-                                <path d={item.iconPath} />
-                            </svg>
+                            <UiIcon
+                                icon={item.icon}
+                                size={15}
+                                strokeWidth={1.9}
+                                style={{ opacity: active ? 1 : 0.6 }}
+                            />
                             <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                                 {item.label}
                                 {item.label === "History" && sessionsLoading && (

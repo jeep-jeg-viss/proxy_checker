@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertTriangle, ChevronDown, Info } from "lucide-react";
 import {
     Button,
     Label,
@@ -12,6 +13,7 @@ import {
     Input,
 } from "react-aria-components";
 import { useProxyChecker, type ValidationIssue } from "./proxy-checker-context";
+import { UiIcon } from "./ui-icon";
 
 const PROXY_TYPES = [
     { id: "http", label: "HTTP" },
@@ -51,10 +53,10 @@ const inp: React.CSSProperties = {
     transition: "border-color 80ms, box-shadow 80ms",
 };
 
-const SEVERITY_COLORS: Record<string, { color: string; icon: string }> = {
-    error: { color: "var(--red)", icon: "M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" },
-    warning: { color: "var(--orange)", icon: "M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" },
-    tip: { color: "var(--accent)", icon: "M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" },
+const SEVERITY_COLORS: Record<string, { color: string; icon: typeof AlertTriangle }> = {
+    error: { color: "var(--red)", icon: AlertTriangle },
+    warning: { color: "var(--orange)", icon: AlertTriangle },
+    tip: { color: "var(--accent)", icon: Info },
 };
 
 function IssueList({ issues }: { issues: ValidationIssue[] }) {
@@ -74,9 +76,7 @@ function IssueList({ issues }: { issues: ValidationIssue[] }) {
                             gap: 4,
                         }}
                     >
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
-                            <path d={sev.icon} />
-                        </svg>
+                        <UiIcon icon={sev.icon} size={11} strokeWidth={1.8} style={{ marginTop: 1 }} />
                         {issue.message}
                     </span>
                 );
@@ -169,7 +169,7 @@ export function ConfigPanel() {
                     <Label style={lbl}>Type</Label>
                     <Button id="config-proxy-type" className="ra-btn" style={{ ...inp, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
                         <SelectValue />
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                        <UiIcon icon={ChevronDown} size={12} strokeWidth={2} color="var(--text-3)" />
                     </Button>
                     <Popover style={{ background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: 3, minWidth: "var(--trigger-width)", zIndex: 50, boxShadow: "0 8px 24px rgba(0,0,0,0.6)" }}>
                         <ListBox>
@@ -192,7 +192,7 @@ export function ConfigPanel() {
                         <Label style={lbl}>Delimiter</Label>
                         <Button id="config-delimiter" className="ra-btn" style={{ ...inp, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", borderColor: borderColor(fieldOrderIssues) }}>
                             <SelectValue />
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                            <UiIcon icon={ChevronDown} size={12} strokeWidth={2} color="var(--text-3)" />
                         </Button>
                         <Popover style={{ background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: 3, minWidth: "var(--trigger-width)", zIndex: 50, boxShadow: "0 8px 24px rgba(0,0,0,0.6)" }}>
                             <ListBox>
@@ -218,7 +218,7 @@ export function ConfigPanel() {
                     <Label style={lbl}>Field order</Label>
                     <Button id="config-field-order" className="ra-btn" style={{ ...inp, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", fontFamily: "var(--font-mono), monospace", borderColor: borderColor(fieldOrderIssues) }}>
                         <SelectValue />
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                        <UiIcon icon={ChevronDown} size={12} strokeWidth={2} color="var(--text-3)" />
                     </Button>
                     <Popover style={{ background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: 3, minWidth: "var(--trigger-width)", zIndex: 50, boxShadow: "0 8px 24px rgba(0,0,0,0.6)" }}>
                         <ListBox>

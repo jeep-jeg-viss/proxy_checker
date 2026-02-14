@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { ArrowLeft, Download, Trash2 } from "lucide-react";
 import { Button, TextField, Label, Input } from "react-aria-components";
 import { useProxyChecker, type ProxyResult } from "./proxy-checker-context";
+import { UiIcon } from "./ui-icon";
 
 function getFlagEmoji(countryCode: string): string {
     if (!countryCode || countryCode.length !== 2) return "🌍";
@@ -158,9 +160,7 @@ export function SessionDetailView() {
                         cursor: "pointer",
                     }}
                 >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 12H5" /><polyline points="12 19 5 12 12 5" />
-                    </svg>
+                    <UiIcon icon={ArrowLeft} size={12} strokeWidth={2} />
                     Back
                 </Button>
                 <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -188,9 +188,7 @@ export function SessionDetailView() {
                         cursor: "pointer",
                     }}
                 >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
+                    <UiIcon icon={Trash2} size={12} strokeWidth={2} />
                     Delete
                 </Button>
             </div>
@@ -326,9 +324,7 @@ export function SessionDetailView() {
                             cursor: "pointer",
                         }}
                     >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
+                        <UiIcon icon={Download} size={12} strokeWidth={2} />
                         Export CSV
                     </Button>
                 </div>

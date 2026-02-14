@@ -4,6 +4,7 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 import { Button } from "react-aria-components";
+import { UiIcon } from "./ui-icon";
 
 export function ThemeToggle() {
     const { theme, setTheme, resolvedTheme } = useTheme();
@@ -46,9 +47,9 @@ export function ThemeToggle() {
             }}
         >
             {resolvedTheme === "dark" ? (
-                <Moon size={15} />
+                <UiIcon icon={Moon} size={15} strokeWidth={1.9} />
             ) : (
-                <Sun size={15} />
+                <UiIcon icon={Sun} size={15} strokeWidth={1.9} />
             )}
         </Button>
     );

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { RefreshCw, Trash2 } from "lucide-react";
 import { TextField, Label, Input, Button } from "react-aria-components";
 import { useProxyChecker, type SessionSummary } from "./proxy-checker-context";
+import { UiIcon } from "./ui-icon";
 
 function formatDate(iso: string): string {
     const d = new Date(iso);
@@ -133,9 +135,7 @@ function SessionCard({ session, onOpen, onDelete }: {
                             fontWeight: 500,
                         }}
                     >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
+                        <UiIcon icon={Trash2} size={13} strokeWidth={2} />
                         Delete
                     </Button>
                 </div>
@@ -267,11 +267,7 @@ export function History() {
                         </>
                     ) : (
                         <>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                                <path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                                <path d="M21 21v-5h-5" />
-                            </svg>
+                            <UiIcon icon={RefreshCw} size={12} strokeWidth={2} />
                             Refresh
                         </>
                     )}

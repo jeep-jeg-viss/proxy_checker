@@ -1,7 +1,9 @@
 "use client";
 
+import { AlertTriangle, CircleX, Info, Play, Square } from "lucide-react";
 import { Button } from "react-aria-components";
 import { useProxyChecker } from "./proxy-checker-context";
+import { UiIcon } from "./ui-icon";
 
 function formatTime(seconds: number): string {
     const m = Math.floor(seconds / 60)
@@ -80,12 +82,12 @@ export function RunControls() {
                 >
                     {isRunning ? (
                         <>
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg>
+                            <UiIcon icon={Square} size={11} strokeWidth={2.2} />
                             Stop
                         </>
                     ) : (
                         <>
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                            <UiIcon icon={Play} size={11} strokeWidth={2.2} />
                             Run Check
                         </>
                     )}
@@ -106,9 +108,7 @@ export function RunControls() {
                                 padding: "2px 8px",
                                 borderRadius: 10,
                             }}>
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
-                                </svg>
+                                <UiIcon icon={CircleX} size={10} strokeWidth={2} />
                                 {visibleErrorCount} {visibleErrorCount === 1 ? "error" : "errors"}
                             </span>
                         )}
@@ -124,9 +124,7 @@ export function RunControls() {
                                 padding: "2px 8px",
                                 borderRadius: 10,
                             }}>
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                                </svg>
+                                <UiIcon icon={AlertTriangle} size={10} strokeWidth={2} />
                                 {visibleWarningCount} {visibleWarningCount === 1 ? "warning" : "warnings"}
                             </span>
                         )}
@@ -142,9 +140,7 @@ export function RunControls() {
                                 padding: "2px 8px",
                                 borderRadius: 10,
                             }}>
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
-                                </svg>
+                                <UiIcon icon={Info} size={10} strokeWidth={2} />
                                 {visibleTipCount} {visibleTipCount === 1 ? "tip" : "tips"}
                             </span>
                         )}
