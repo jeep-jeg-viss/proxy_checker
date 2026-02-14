@@ -29,8 +29,7 @@ export function ThemeToggle() {
         <Button
             onPress={toggleTheme}
             className="theme-toggle"
-            aria-label="Toggle theme"
-            title={`Current: ${theme === 'system' ? `System (${resolvedTheme})` : theme}`}
+            aria-label={`Toggle theme — current: ${theme === 'system' ? `System (${resolvedTheme})` : theme}`}
             style={{
                 background: "transparent",
                 border: "none",
