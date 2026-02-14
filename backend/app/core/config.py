@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     database_url: str
     db_echo: bool = False
     db_auto_create: bool = True
+    auth0_domain: str
+    auth0_audience: str
+    auth0_issuer: str | None = None
+    auth0_algorithms: list[str] = ["RS256"]
 
     model_config = SettingsConfigDict(
         env_file=".env",

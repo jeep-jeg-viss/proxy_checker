@@ -26,7 +26,11 @@ class CheckService:
         self._session_repository = session_repository
         self._geoip_service = geoip_service
 
-    async def stream_check_events(self, request: CheckRequest) -> AsyncGenerator[str, None]:
+    async def stream_check_events(
+        self,
+        request: CheckRequest,
+        owner_sub: str,
+    ) -> AsyncGenerator[str, None]:
         field_order = [field.strip() for field in request.field_order.split(":") if field.strip()]
 
         proxy_list: list[dict[str, str]] = []
@@ -135,6 +139,7 @@ class CheckService:
 
         session_record = SessionRecord(
             id=session_id,
+            owner_sub=owner_sub,
             name=session_name,
             tags=[tag.strip() for tag in request.tags if tag.strip()],
             created_at=datetime.now(timezone.utc).isoformat(),

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
-from ...dependencies import get_check_service
+from ...dependencies import get_check_service, require_auth
 from ....schemas.check import CheckRequest
 from ....services.check_service import CheckService
 
@@ -12,10 +12,13 @@ router = APIRouter(tags=["checks"])
 async def run_check(
     payload: CheckRequest,
     request: Request,
+    principal: dict = Depends(require_auth),
     check_service: CheckService = Depends(get_check_service),
 ):
+    owner_sub = str(principal["sub"])
+
     async def stream_events():
-        async for event in check_service.stream_check_events(payload):
+        async for event in check_service.stream_check_events(payload, owner_sub=owner_sub):
             if await request.is_disconnected():
                 break
             yield event

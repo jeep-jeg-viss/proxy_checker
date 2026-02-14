@@ -14,6 +14,7 @@ class SessionRepository:
     async def upsert(self, session: SessionRecord) -> None:
         existing = await self._db.get(ProxySession, session.id)
         values = {
+            "owner_sub": session.owner_sub,
             "name": session.name,
             "tags": session.tags,
             "created_at": self._parse_created_at(session.created_at),
@@ -31,9 +32,11 @@ class SessionRepository:
 
         await self._db.commit()
 
-    async def list_summaries(self) -> list[dict]:
+    async def list_summaries(self, owner_sub: str) -> list[dict]:
         result = await self._db.execute(
-            select(ProxySession).order_by(desc(ProxySession.created_at))
+            select(ProxySession)
+            .where(ProxySession.owner_sub == owner_sub)
+            .order_by(desc(ProxySession.created_at))
         )
         sessions = result.scalars().all()
 
@@ -48,8 +51,14 @@ class SessionRepository:
             for item in sessions
         ]
 
-    async def get(self, session_id: str) -> dict | None:
-        session = await self._db.get(ProxySession, session_id)
+    async def get(self, session_id: str, owner_sub: str) -> dict | None:
+        result = await self._db.execute(
+            select(ProxySession).where(
+                ProxySession.id == session_id,
+                ProxySession.owner_sub == owner_sub,
+            )
+        )
+        session = result.scalar_one_or_none()
         if session is None:
             return None
 
@@ -63,8 +72,14 @@ class SessionRepository:
             "stats": session.stats or {},
         }
 
-    async def delete(self, session_id: str) -> bool:
-        session = await self._db.get(ProxySession, session_id)
+    async def delete(self, session_id: str, owner_sub: str) -> bool:
+        result = await self._db.execute(
+            select(ProxySession).where(
+                ProxySession.id == session_id,
+                ProxySession.owner_sub == owner_sub,
+            )
+        )
+        session = result.scalar_one_or_none()
         if session is None:
             return False
 

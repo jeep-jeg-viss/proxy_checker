@@ -15,6 +15,7 @@ class ProxySession(Base):
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
     )
+    owner_sub: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     tags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

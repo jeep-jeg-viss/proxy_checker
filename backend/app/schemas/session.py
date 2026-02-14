@@ -27,6 +27,7 @@ class ProxyResult(BaseModel):
 
 class SessionRecord(BaseModel):
     id: str
+    owner_sub: str
     name: str
     tags: list[str] = Field(default_factory=list)
     created_at: str

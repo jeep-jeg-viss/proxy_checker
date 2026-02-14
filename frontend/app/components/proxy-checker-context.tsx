@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useRef, useCallback, useEffect, useMemo, type ReactNode } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 export interface ProxyResult {
@@ -145,6 +146,7 @@ function mapResult(parsed: Record<string, unknown>): ProxyResult {
 
 // ── Provider ────────────────────────────────────────────────────────────────
 export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
+    const { getAccessTokenSilently } = useAuth0();
     const [proxyText, setProxyText] = useState("");
     const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
     const [status, setStatus] = useState<RunStatus>("idle");
@@ -170,6 +172,27 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
     const updateConfig = useCallback((key: keyof Config, value: string) => {
         setConfig((prev) => ({ ...prev, [key]: value }));
     }, []);
+
+    const getAuthHeaders = useCallback(
+        async (includeJson: boolean = false): Promise<Record<string, string>> => {
+            const token = await getAccessTokenSilently({
+                authorizationParams: {
+                    audience: process.env.NEXT_PUBLIC_AUTH0_AUDIENCE,
+                    scope: process.env.NEXT_PUBLIC_AUTH0_SCOPE ?? "openid profile email",
+                },
+            });
+
+            if (includeJson) {
+                return {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                };
+            }
+
+            return { Authorization: `Bearer ${token}` };
+        },
+        [getAccessTokenSilently]
+    );
 
     // ── Validation ──────────────────────────────────────────────────────
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -348,7 +371,8 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
     // ── Fetch sessions list ─────────────────────────────────────────────
     const fetchSessions = useCallback(async () => {
         try {
-            const res = await fetch("/api/sessions");
+            const headers = await getAuthHeaders();
+            const res = await fetch("/api/sessions", { headers });
             if (res.ok) {
                 const data = await res.json();
                 setSessions(
@@ -370,12 +394,13 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
         } catch (err) {
             console.error("Failed to fetch sessions:", err);
         }
-    }, []);
+    }, [getAuthHeaders]);
 
     // ── Load a single session detail ────────────────────────────────────
     const loadSession = useCallback(async (id: string) => {
         try {
-            const res = await fetch(`/api/sessions/${id}`);
+            const headers = await getAuthHeaders();
+            const res = await fetch(`/api/sessions/${id}`, { headers });
             if (res.ok) {
                 const s = await res.json();
                 setSelectedSession({
@@ -398,12 +423,13 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
         } catch (err) {
             console.error("Failed to load session:", err);
         }
-    }, []);
+    }, [getAuthHeaders]);
 
     // ── Delete session ──────────────────────────────────────────────────
     const deleteSession = useCallback(async (id: string) => {
         try {
-            const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+            const headers = await getAuthHeaders();
+            const res = await fetch(`/api/sessions/${id}`, { method: "DELETE", headers });
             if (res.ok) {
                 setSessions((prev) => prev.filter((s) => s.id !== id));
                 if (selectedSession?.id === id) {
@@ -414,7 +440,7 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
         } catch (err) {
             console.error("Failed to delete session:", err);
         }
-    }, [selectedSession]);
+    }, [getAuthHeaders, selectedSession]);
 
     // ── Start check run ─────────────────────────────────────────────────
     const startRun = useCallback(async () => {
@@ -438,9 +464,10 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
             .filter(Boolean);
 
         try {
+            const headers = await getAuthHeaders(true);
             const res = await fetch("/api/check", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify({
                     proxies: proxyText,
                     session_name: sessionName,
@@ -543,7 +570,7 @@ export function ProxyCheckerProvider({ children }: { children: ReactNode }) {
             abortRef.current = null;
             setStatus((s) => (s === "running" ? "done" : s));
         }
-    }, [proxyText, config, sessionName, sessionTags, fetchSessions]);
+    }, [proxyText, config, sessionName, sessionTags, fetchSessions, getAuthHeaders]);
 
     // Fetch sessions on mount
     useEffect(() => {

@@ -22,6 +22,7 @@ cd ..
 
 # Frontend
 cd frontend
+Copy-Item .env.example .env.local
 npm install
 ```
 
@@ -55,6 +56,14 @@ The app will be available at **http://localhost:3000**. The frontend automatical
 ### 4. Open the App
 
 Navigate to [http://localhost:3000](http://localhost:3000) in your browser — you're all set!
+
+### 5. Auth0 Notes
+
+- Frontend uses Auth0 login and only renders the dashboard for authenticated users.
+- Backend validates Auth0 bearer tokens for `/api/check` and `/api/sessions*`.
+- Use the same API Audience value in both:
+  - `frontend/.env.local` (`NEXT_PUBLIC_AUTH0_AUDIENCE`)
+  - `backend/.env` (`AUTH0_AUDIENCE`)
 
 ---
 
