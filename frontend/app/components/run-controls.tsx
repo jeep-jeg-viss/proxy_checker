@@ -65,16 +65,16 @@ export function RunControls() {
                         background: isRunning
                             ? "var(--red-muted)"
                             : isVisiblyBlocked
-                                ? "var(--bg-3)"
+                                ? "var(--bg-2)"
                                 : "var(--accent)",
                         color: isRunning
                             ? "var(--red)"
                             : isVisiblyBlocked
-                                ? "var(--text-3)"
+                                ? "var(--text-2)"
                                 : "#fff",
                         border: isRunning ? "1px solid rgba(217,83,79,0.25)" : "none",
                         cursor: "pointer",
-                        transition: "all 80ms",
+                        transition: "background 80ms, color 80ms, border-color 80ms, opacity 80ms",
                         opacity: !isRunning && isVisiblyBlocked ? 0.7 : 1,
                     }}
                 >
@@ -154,6 +154,7 @@ export function RunControls() {
                 {isRunning && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <div
+                            className="run-spinner"
                             style={{
                                 width: 14,
                                 height: 14,

@@ -16,12 +16,16 @@ function OverviewPage() {
   const { status } = useProxyChecker();
   const hasResults = status === "done" || status === "running";
 
-  return (
-    <div
-      className="overview-container"
-      style={{ maxWidth: 960, width: "100%", display: "flex", flexDirection: "column", gap: 20 }}
-    >
-      {hasResults && <StatsBar />}
+    return (
+        <div
+            className="overview-container"
+            style={{ maxWidth: 960, width: "100%", display: "flex", flexDirection: "column", gap: 20 }}
+        >
+            <h1 style={{ fontSize: 14, fontWeight: 500, color: "var(--text-1)", lineHeight: 1.3 }}>
+                Overview
+            </h1>
+
+            {hasResults && <StatsBar />}
 
       <div
         className="overview-grid"

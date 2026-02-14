@@ -6,13 +6,13 @@ import { useProxyChecker, type SessionSummary } from "./proxy-checker-context";
 
 function formatDate(iso: string): string {
     const d = new Date(iso);
-    return d.toLocaleDateString("en-US", {
+    return new Intl.DateTimeFormat(undefined, {
         month: "short",
         day: "numeric",
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
-    });
+    }).format(d);
 }
 
 function relativeTime(iso: string): string {
@@ -57,12 +57,12 @@ function CountryPill({ name, count }: { name: string; count: number }) {
                 padding: "2px 6px",
                 fontSize: 11,
                 color: "var(--text-2)",
-                background: "var(--bg-3)",
+                background: "var(--bg-2)",
                 borderRadius: 3,
                 whiteSpace: "nowrap",
             }}
         >
-            <span style={{ color: "var(--text-3)" }}>{name}</span>
+            <span style={{ color: "var(--text-2)" }}>{name}</span>
             {count}
         </span>
     );
@@ -103,9 +103,9 @@ function SessionCard({ session, onOpen, onDelete }: {
                         className="ra-btn"
                         onPress={onOpen}
                         style={{
-                            fontSize: 11,
+                            fontSize: 12,
                             fontWeight: 500,
-                            padding: "3px 8px",
+                            padding: "5px 10px",
                             borderRadius: "var(--radius)",
                             background: "var(--bg-2)",
                             border: "1px solid var(--border)",
@@ -124,12 +124,12 @@ function SessionCard({ session, onOpen, onDelete }: {
                             border: "1px solid rgba(217,83,79,0.25)",
                             cursor: "pointer",
                             color: "var(--red)",
-                            padding: "3px 8px",
+                            padding: "5px 10px",
                             borderRadius: "var(--radius)",
                             display: "flex",
                             alignItems: "center",
                             gap: 4,
-                            fontSize: 11,
+                            fontSize: 12,
                             fontWeight: 500,
                         }}
                     >
@@ -223,7 +223,9 @@ export function History() {
             {/* Header */}
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 14, fontWeight: 500, color: "var(--text-1)" }}>Session History</span>
+                    <h1 style={{ fontSize: 14, fontWeight: 500, color: "var(--text-1)", lineHeight: 1.3 }}>
+                        Session History
+                    </h1>
                     <span style={{ fontSize: 12, color: "var(--text-3)" }}>{sessions.length} sessions</span>
                 </div>
                 <Button
@@ -286,7 +288,7 @@ export function History() {
                                 background: !tagFilter ? "var(--accent-muted)" : "var(--bg-2)",
                                 color: !tagFilter ? "var(--accent)" : "var(--text-3)",
                                 cursor: "pointer",
-                                transition: "all 80ms",
+                                transition: "background 80ms, color 80ms, border-color 80ms",
                             }}
                         >
                             All
@@ -305,7 +307,7 @@ export function History() {
                                     background: tagFilter === tag ? "var(--accent-muted)" : "var(--bg-2)",
                                     color: tagFilter === tag ? "var(--accent)" : "var(--text-3)",
                                     cursor: "pointer",
-                                    transition: "all 80ms",
+                                    transition: "background 80ms, color 80ms, border-color 80ms",
                                     whiteSpace: "nowrap",
                                 }}
                             >

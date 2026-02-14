@@ -14,7 +14,7 @@ export function ThemeToggle() {
     );
 
     if (!hydrated) {
-        return <div style={{ width: 15, height: 15 }} />; // Placeholder to avoid layout shift
+        return <div aria-hidden style={{ width: 24, height: 24 }} />; // Placeholder to avoid layout shift
     }
 
     const toggleTheme = () => {
@@ -30,12 +30,13 @@ export function ThemeToggle() {
             onPress={toggleTheme}
             className="theme-toggle"
             aria-label="Toggle theme"
-            title={`Current: ${theme === 'system' ? `System (${resolvedTheme})` : theme}`}
             style={{
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
                 padding: 4,
+                minWidth: 24,
+                minHeight: 24,
                 borderRadius: "var(--radius)",
                 color: "var(--text-3)",
                 display: "flex",

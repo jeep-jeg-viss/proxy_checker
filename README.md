@@ -14,8 +14,13 @@ A toolkit for checking proxy servers and stress-testing HTTP endpoints, with a F
 ### 1. Install Dependencies
 
 ```bash
-# Backend (from project root)
+# Root tools (proxy checker CLI + stress tester)
 uv sync
+
+# Backend
+cd backend
+uv sync
+cd ..
 
 # Frontend
 cd frontend
@@ -24,10 +29,11 @@ npm install
 
 ### 2. Start the Backend
 
-Open a terminal in the **project root** and run:
+Open a terminal in the **backend/** directory and run:
 
 ```bash
-uv run uvicorn api:app --reload --port 8000
+cd backend
+uv run uvicorn app.main:app --reload --port 8000
 ```
 
 The API will be available at **http://localhost:8000**. You can verify it's running with:

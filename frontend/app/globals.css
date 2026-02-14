@@ -330,3 +330,22 @@ select {
     left: 100%;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-entering],
+  [data-exiting] {
+    animation: none !important;
+  }
+
+  .run-spinner {
+    animation: none !important;
+  }
+
+  button,
+  [role="button"],
+  input,
+  textarea,
+  select {
+    transition: none !important;
+  }
+}

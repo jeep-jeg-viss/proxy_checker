@@ -126,7 +126,9 @@ export function ResultsTable() {
             {/* Header row */}
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Results</span>
+                    <h2 style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.3 }}>
+                        Results
+                    </h2>
                     <span style={{ fontSize: 11, color: "var(--text-3)" }}>{rows.length}</span>
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: 6 }}>

@@ -15,14 +15,14 @@ function getFlagEmoji(countryCode: string): string {
 
 function formatDate(iso: string): string {
     const d = new Date(iso);
-    return d.toLocaleDateString("en-US", {
+    return new Intl.DateTimeFormat(undefined, {
         weekday: "short",
         month: "short",
         day: "numeric",
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
-    });
+    }).format(d);
 }
 
 function Status({ value }: { value: "OK" | "FAIL" }) {
@@ -162,9 +162,11 @@ export function SessionDetailView() {
                     </svg>
                     Back
                 </Button>
-                <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 14, fontWeight: 500, color: "var(--text-1)" }}>{s.name}</span>
-                    <span style={{ fontSize: 12, color: "var(--text-3)", marginLeft: 10 }}>{formatDate(s.created_at)}</span>
+                <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <h1 style={{ fontSize: 14, fontWeight: 500, color: "var(--text-1)", lineHeight: 1.3 }}>
+                        {s.name}
+                    </h1>
+                    <span style={{ fontSize: 12, color: "var(--text-3)" }}>{formatDate(s.created_at)}</span>
                 </div>
                 <Button
                     className="ra-btn"
@@ -226,9 +228,9 @@ export function SessionDetailView() {
             {/* Countries */}
             {countryList.length > 0 && (
                 <div>
-                    <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)", marginBottom: 8, display: "block" }}>
+                    <h2 style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)", marginBottom: 8, display: "block" }}>
                         Countries ({countryList.length})
-                    </span>
+                    </h2>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                         <Button
                             onPress={() => setCountryFilter("")}
@@ -242,7 +244,7 @@ export function SessionDetailView() {
                                 background: !countryFilter ? "var(--accent-muted)" : "var(--bg-2)",
                                 color: !countryFilter ? "var(--accent)" : "var(--text-2)",
                                 cursor: "pointer",
-                                transition: "all 80ms",
+                                transition: "background 80ms, color 80ms, border-color 80ms",
                             }}
                         >
                             All
@@ -264,7 +266,7 @@ export function SessionDetailView() {
                                     background: countryFilter === name ? "var(--accent-muted)" : "var(--bg-2)",
                                     color: countryFilter === name ? "var(--accent)" : "var(--text-2)",
                                     cursor: "pointer",
-                                    transition: "all 80ms",
+                                    transition: "background 80ms, color 80ms, border-color 80ms",
                                     whiteSpace: "nowrap",
                                 }}
                             >
@@ -279,7 +281,9 @@ export function SessionDetailView() {
             {/* Filter + Export */}
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>Results</span>
+                    <h2 style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)", lineHeight: 1.3 }}>
+                        Results
+                    </h2>
                     <span style={{ fontSize: 11, color: "var(--text-3)" }}>{rows.length}</span>
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: 6 }}>
