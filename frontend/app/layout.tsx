@@ -14,6 +14,8 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+import { ThemeProvider } from "./components/theme-provider";
+
 export const metadata: Metadata = {
   title: "Proxy Checker — Bulk Proxy Validation",
   description:
@@ -26,11 +28,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

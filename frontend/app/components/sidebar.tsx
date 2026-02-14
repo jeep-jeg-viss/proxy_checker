@@ -2,6 +2,8 @@
 
 import { useProxyChecker, type ViewName } from "./proxy-checker-context";
 
+import { ThemeToggle } from "./theme-toggle";
+
 const NAV: { label: string; view: ViewName; iconPath: string }[] = [
     { label: "Overview", view: "overview", iconPath: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" },
     { label: "History", view: "history", iconPath: "M12 3a9 9 0 1 0 9 9M12 7v5l3 2" },
@@ -50,7 +52,7 @@ export function Sidebar() {
                         justifyContent: "center",
                     }}
                 >
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-1)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                     </svg>
                 </div>
@@ -128,9 +130,12 @@ export function Sidebar() {
 
             <div style={{ flex: 1 }} />
 
-            <span style={{ padding: "6px 10px", fontSize: 11, color: "var(--text-3)" }}>
-                v0.2.0
-            </span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 10px" }}>
+                <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+                    v0.2.0
+                </span>
+                <ThemeToggle />
+            </div>
         </aside>
     );
 }

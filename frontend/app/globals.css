@@ -2,6 +2,36 @@
 
 /* ── Linear Dark Theme ─────────────────────────────────────────────────── */
 :root {
+  --bg-0: #ffffff;
+  --bg-1: #f4f4f5;
+  --bg-2: #e4e4e7;
+  --bg-3: #d4d4d8;
+  --bg-hover: #f0f0f3;
+  --bg-active: #e4e4e7;
+
+  --text-1: #18181b;
+  --text-2: #52525b;
+  --text-3: #71717a;
+
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-muted: rgba(79, 70, 229, 0.1);
+
+  --green: #16a34a;
+  --green-muted: rgba(22, 163, 74, 0.1);
+  --red: #dc2626;
+  --red-muted: rgba(220, 38, 38, 0.1);
+  --orange: #d97706;
+  --orange-muted: rgba(217, 119, 6, 0.1);
+
+  --border: #e4e4e7;
+  --border-hover: #d4d4d8;
+
+  --radius: 5px;
+  --radius-lg: 8px;
+}
+
+html.dark {
   --bg-0: #0a0a0b;
   --bg-1: #101012;
   --bg-2: #18181b;
@@ -9,9 +39,9 @@
   --bg-hover: #1c1c20;
   --bg-active: #232328;
 
-  --text-1: #e8e8ed;
-  --text-2: #7d7d85;
-  --text-3: #4e4e56;
+  --text-1: #ffffff;
+  --text-2: #d4d4d8;
+  --text-3: #a1a1aa;
 
   --accent: #5e6ad2;
   --accent-hover: #6e7bdf;
@@ -26,9 +56,6 @@
 
   --border: rgba(255, 255, 255, 0.055);
   --border-hover: rgba(255, 255, 255, 0.09);
-
-  --radius: 5px;
-  --radius-lg: 8px;
 }
 
 @theme inline {
@@ -55,6 +82,7 @@ body {
   font-family: var(--font-sans), -apple-system, system-ui, sans-serif;
   font-size: 13px;
   line-height: 1.5;
+  transition: background 0.3s, color 0.3s;
 }
 
 ::-webkit-scrollbar {

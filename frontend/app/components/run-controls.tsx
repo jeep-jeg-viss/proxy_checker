@@ -12,9 +12,20 @@ function formatTime(seconds: number): string {
 }
 
 export function RunControls() {
-    const { status, startRun, stopRun, progress, elapsedSeconds, canRun, errorCount, warningCount, tipCount, touchAll } = useProxyChecker();
+    const { status, startRun, stopRun, progress, elapsedSeconds, canRun, touchAll, touched, validation } = useProxyChecker();
     const isRunning = status === "running";
     const progressPct = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
+
+    // Calculate visible counts based on touched fields
+    const visibleIssues = Object.entries(validation).flatMap(([field, issues]) =>
+        touched[field] ? issues : []
+    );
+    const visibleErrorCount = visibleIssues.filter(i => i.severity === "error").length;
+    const visibleWarningCount = visibleIssues.filter(i => i.severity === "warning").length;
+    const visibleTipCount = visibleIssues.filter(i => i.severity === "tip").length;
+
+    // Button looks disabled only if there are VISIBLE blocking errors
+    const isVisiblyBlocked = visibleErrorCount > 0;
 
     const handlePress = () => {
         if (isRunning) {
@@ -53,18 +64,18 @@ export function RunControls() {
                         borderRadius: "var(--radius)",
                         background: isRunning
                             ? "var(--red-muted)"
-                            : !canRun
+                            : isVisiblyBlocked
                                 ? "var(--bg-3)"
                                 : "var(--accent)",
                         color: isRunning
                             ? "var(--red)"
-                            : !canRun
+                            : isVisiblyBlocked
                                 ? "var(--text-3)"
                                 : "#fff",
                         border: isRunning ? "1px solid rgba(217,83,79,0.25)" : "none",
                         cursor: "pointer",
                         transition: "all 80ms",
-                        opacity: !isRunning && !canRun ? 0.7 : 1,
+                        opacity: !isRunning && isVisiblyBlocked ? 0.7 : 1,
                     }}
                 >
                     {isRunning ? (
@@ -81,9 +92,9 @@ export function RunControls() {
                 </Button>
 
                 {/* Validation summary badges when not running */}
-                {!isRunning && (errorCount > 0 || warningCount > 0 || tipCount > 0) && (
+                {!isRunning && (visibleErrorCount > 0 || visibleWarningCount > 0 || visibleTipCount > 0) && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {errorCount > 0 && (
+                        {visibleErrorCount > 0 && (
                             <span style={{
                                 display: "inline-flex",
                                 alignItems: "center",
@@ -98,28 +109,28 @@ export function RunControls() {
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
                                 </svg>
-                                {errorCount} {errorCount === 1 ? "error" : "errors"}
+                                {visibleErrorCount} {visibleErrorCount === 1 ? "error" : "errors"}
                             </span>
                         )}
-                        {warningCount > 0 && (
+                        {visibleWarningCount > 0 && (
                             <span style={{
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: 4,
                                 fontSize: 11,
                                 fontWeight: 500,
-                                color: "#e5a50a",
-                                background: "rgba(229,165,10,0.1)",
+                                color: "var(--orange)",
+                                background: "var(--orange-muted)",
                                 padding: "2px 8px",
                                 borderRadius: 10,
                             }}>
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
                                 </svg>
-                                {warningCount} {warningCount === 1 ? "warning" : "warnings"}
+                                {visibleWarningCount} {visibleWarningCount === 1 ? "warning" : "warnings"}
                             </span>
                         )}
-                        {tipCount > 0 && (
+                        {visibleTipCount > 0 && (
                             <span style={{
                                 display: "inline-flex",
                                 alignItems: "center",
@@ -134,7 +145,7 @@ export function RunControls() {
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
                                 </svg>
-                                {tipCount} {tipCount === 1 ? "tip" : "tips"}
+                                {visibleTipCount} {visibleTipCount === 1 ? "tip" : "tips"}
                             </span>
                         )}
                     </div>

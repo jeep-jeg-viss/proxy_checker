@@ -7,7 +7,7 @@ const lbl: React.CSSProperties = {
     display: "block",
     fontSize: 12,
     fontWeight: 400,
-    color: "var(--text-3)",
+    color: "var(--text-2)",
     marginBottom: 4,
 };
 
